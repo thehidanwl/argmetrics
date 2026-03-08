@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { prisma } from '../config/database.js';
+import { prisma, parseJsonField } from '../config/database.js';
 
 // Query validation schema
 const metricsQuerySchema = z.object({
@@ -123,7 +123,7 @@ export const getMetricByName = async (req: Request, res: Response) => {
       orderBy: { date: 'desc' },
     });
 
-    const variation = previous
+    const variation = previous && previous.value !== 0
       ? ((latest.value - previous.value) / previous.value) * 100
       : 0;
 
@@ -135,12 +135,12 @@ export const getMetricByName = async (req: Request, res: Response) => {
         unit: getMetricUnit(latest.name),
         latest: {
           value: latest.value,
-          date: latest.date,
+          date: latest.date.toISOString().split('T')[0],
           variation: Number(variation.toFixed(2)),
           variationType: 'period',
         },
         series: series.reverse().map((m) => ({
-          date: m.date,
+          date: m.date.toISOString().split('T')[0],
           value: m.value,
         })),
       },
@@ -190,7 +190,7 @@ export const getAvailableMetrics = async (req: Request, res: Response) => {
   // Group by name and get date range
   const metricsMap = new Map<
     string,
-    { category: string; source: string; periodType: string; dates: string[] }
+    { category: string; source: string; periodType: string; dates: Date[] }
   >();
 
   for (const m of metrics) {
@@ -217,8 +217,8 @@ export const getAvailableMetrics = async (req: Request, res: Response) => {
       periodType: data.periodType,
       source: data.source,
       dateRange: {
-        from: data.dates.length ? Math.min(...data.dates.map((d) => new Date(d).getTime())) : null,
-        to: data.dates.length ? Math.max(...data.dates.map((d) => new Date(d).getTime())) : null,
+        from: data.dates.length ? new Date(Math.min(...data.dates.map(d => d.getTime()))).toISOString().split('T')[0] : null,
+        to: data.dates.length ? new Date(Math.max(...data.dates.map(d => d.getTime()))).toISOString().split('T')[0] : null,
       },
     })),
   });

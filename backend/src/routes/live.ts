@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { prisma } from '../config/database.js';
+import { prisma, parseJsonField } from '../config/database.js';
 
 const router = Router();
 
@@ -16,8 +16,9 @@ router.get('/usd', async (req, res) => {
 
     // Check if cache is valid
     if (cache && new Date() < cache.expiresAt) {
+      const value = parseJsonField<Record<string, unknown>>(cache.value, {});
       res.json({
-        data: cache.value,
+        data: value,
         cached: true,
         expiresAt: cache.expiresAt.toISOString(),
       });
@@ -35,18 +36,18 @@ router.get('/usd', async (req, res) => {
       brecha: { value: 18.6, unit: 'percentage' },
     };
 
-    // Save to cache
+    // Save to cache (store JSON as string for SQLite)
     const expiresAt = new Date(Date.now() + USD_CACHE_TTL * 60 * 1000);
     await prisma.liveCache.upsert({
       where: { key: 'usd_rates' },
       update: {
-        value: mockData,
+        value: JSON.stringify(mockData),
         fetchedAt: new Date(),
         expiresAt,
       },
       create: {
         key: 'usd_rates',
-        value: mockData,
+        value: JSON.stringify(mockData),
         fetchedAt: new Date(),
         expiresAt,
       },
@@ -66,8 +67,9 @@ router.get('/usd', async (req, res) => {
     });
     
     if (cache) {
+      const value = parseJsonField<Record<string, unknown>>(cache.value, {});
       res.json({
-        data: cache.value,
+        data: value,
         cached: true,
         expiresAt: cache.expiresAt.toISOString(),
         error: 'Using cached data due to API error',
@@ -93,8 +95,9 @@ router.get('/country-risk', async (req, res) => {
 
     // Check if cache is valid
     if (cache && new Date() < cache.expiresAt) {
+      const value = parseJsonField<Record<string, unknown>>(cache.value, {});
       res.json({
-        data: cache.value,
+        data: value,
         cached: true,
         expiresAt: cache.expiresAt.toISOString(),
       });
@@ -115,13 +118,13 @@ router.get('/country-risk', async (req, res) => {
     await prisma.liveCache.upsert({
       where: { key: 'country_risk' },
       update: {
-        value: mockData,
+        value: JSON.stringify(mockData),
         fetchedAt: new Date(),
         expiresAt,
       },
       create: {
         key: 'country_risk',
-        value: mockData,
+        value: JSON.stringify(mockData),
         fetchedAt: new Date(),
         expiresAt,
       },
@@ -140,8 +143,9 @@ router.get('/country-risk', async (req, res) => {
     });
     
     if (cache) {
+      const value = parseJsonField<Record<string, unknown>>(cache.value, {});
       res.json({
-        data: cache.value,
+        data: value,
         cached: true,
         expiresAt: cache.expiresAt.toISOString(),
         error: 'Using cached data due to API error',
