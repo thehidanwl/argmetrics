@@ -1,82 +1,200 @@
-# Priorización de Features - MoSCoW
+# Priorización de Features - 4 Fases de Implementación
 
-## 🟢 Must Have (Crítico - MVP)
-> Sin estas features, el proyecto NO tiene sentido. Deben estar en la primera iteración.
+## Visión General
 
-| ID | Feature | Justificación |
-|----|---------|----------------|
-| M-01 | Dashboard con 5 indicadores principales | Es la propuesta de valor core |
-| M-02 | Gráficos de trends interactivos | Visualización de datos económicos |
-| M-03 | Filtro rango de fechas (año inicio/fin) | Análisis histórico básico |
-| M-04 | Indicadores: Inflación, Dólar, PBI, Desempleo, Pobreza | Los 5 más relevantes para usuarios |
-| M-05 | Base de datos propia (Supabase) | Almacenamiento y caché |
-| M-06 | Consumo APIs externas (BCRA, INDEC) | Fuente de datos en tiempo real |
-| M-07 | Modo offline con datos cacheados | Disponibilidad sin conexión |
-| M-08 | Tema oscuro (dark mode) | Diseño atractivo como requisito |
-| M-09 | Navegación bottom tabs | UX básica |
+El proyecto se implementa en 4 fases progresivas, desde la fundación hasta la calidad y extras. Cada fase construye sobre la anterior.
 
 ---
 
-## 🟡 Should Have (Importante - versión 1.0)
-> Agregan valor significativo. Incluir si el tiempo lo permite.
+## Fase 1 — Fundación (Prioridad Crítica)
 
-| ID | Feature | Justificación |
-|----|---------|----------------|
-| S-01 | Filtro interanual vs. acumulado | Análisis más profundo |
-| S-02 | Filtro real vs. nominal | Diferenciación clave para Argentina |
-| S-03 | Más indicadores (Balanza, Riesgo País, Reservas) | Completar propuesta de valor |
-| S-04 | Pull-to-refresh | UX estándar |
-| S-05 | Skeleton loaders durante carga | Percepción de performance |
-| S-06 | Selector de favoritos para dashboard | Personalización básica |
-| S-07 | Tabla de datos históricos | Para análisis granular |
-| S-08 | Persistencia de filtros entre sesiones | Conveniencia |
+### Objetivo
+Establecer la base técnica: modelo de datos, primeras ingestas, backend básico, dashboard inicial.
 
----
+### Entregables
 
-## 🟠 Could Have (Deseable - versión 1.1+)
-> Nice to have. Mejoran experiencia pero no son esenciales.
+| ID | Entregable | Descripción |
+|----|------------|-------------|
+| F1.1 | Modelo de datos PostgreSQL | Tablas metrics, live_cache, ingestion_log |
+| F1.2 | Ingesta dólar oficial (BCRA API) | Tipo A - cron diario |
+| F1.3 | Ingesta inflación (INDEC) | Tipo A - mensual |
+| F1.4 | Backend API básico | Endpoints GET /v1/metrics |
+| F1.5 | Dashboard con primeras métricas | Gráficos de trends básicos |
 
-| ID | Feature | Justificación |
-|----|---------|----------------|
-| C-01 | Notificaciones push de alertas | Engagement del usuario |
-| C-02 | Configuración de umbrales de alerta | Valor agregado |
-| C-03 | Tema claro (light mode) | Preferencias de usuario |
-| C-04 | Gráficos animados | Mejora visual |
-| C-05 | Indicador de última actualización | Transparencia |
-| C-06 | Widgets en home screen | Acceso rápido |
-| C-07 | Exportar datos (CSV/PDF) | Para analistas08 | Comparación de indicadores |
-| C- | Análisis avanzado |
-| C-09 | Modo widget para Apple Watch/Android Wear | Acceso rápido |
+### Métricas Incluidas
+- Inflación mensual (IPC)
+- Inflación interanual (calculada)
+- Dólar oficial (BCRA)
+- Tasa de interés BCRA
+- Reservas BCRA
+
+### Criterio de Éxito
+App muestra gráficos funcionales con datos de al menos 3 métricas económicas core.
 
 ---
 
-## 🔴 Won't Have (Scope out - versiones futuras)
-> No para esta iteración. Documentar para roadmap.
+## Fase 2 — Datos en Vivo (Prioridad Alta)
 
-| ID | Feature | Justificación |
-|----|---------|----------------|
-| W-01 | Autenticación / usuario | No es necesario para MVP |
-| W-02 | Widgets interactivos | Complejidad innecesaria inicial |
-| W-03 | Alertas por email | MVP no lo requiere |
-| W-04 | Comparación entre países | Fuera de scope inicial |
-| W-05 | Predicciones / ML | Roadmap a largo plazo |
-| W-06 | Chat con otros usuarios | No es una red social |
-| W-07 | Integración con trading platforms | Fuera de scope |
+### Objetivo
+Implementar sistema de caché en tiempo real para tipos de cambio y riesgo país.
+
+### Entregables
+
+| ID | Entregable | Descripción |
+|----|------------|-------------|
+| F2.1 | Caché dólar blue (Bluelytics) | TTL 30 minutos |
+| F2.2 | Caché dólar MEP/CCL | TTL 30 minutos |
+| F2.3 | Caché riesgo país | TTL 1 hora |
+| F2.4 | Endpoint /v1/live/usd | Todos los dólares en vivo |
+| F2.5 | Endpoint /v1/live/country-risk | Riesgo país en vivo |
+| F2.6 | Sección tipo de cambio en frontend | Dashboard en vivo |
+| F2.7 | Indicadores de último valor | Timestamp de actualización |
+
+### Métricas Incluidas
+- Dólar blue
+- Dólar MEP
+- Dólar CCL
+- Riesgo país (EMBI)
+
+### Criterio de Éxito
+Los tipos de cambio se actualizan en tiempo real con cacheo inteligente.
 
 ---
 
-## Notas de Priorización
+## Fase 3 — Datos Históricos Completos (Prioridad Media)
 
-### Dependencias Técnicas
-- M-05 y M-06 son prerequisito para casi todo lo demás (datos)
-- M-08 (tema) debe estar desde el inicio para mantener consistencia
-- M-02 (gráficos) necesita definirse temprano para elegir librería
+### Objetivo
+Completar la base de datos con todas las métricas definidas (22 en total).
 
-### Risks Identificados
-- APIs de BCRA/INDEC pueden cambiar sin aviso → tener plan B con BD propia
-- Datos económicos sensibles a volatilidad → cachear agresivamente
-- Diseño "atractivo" es subjetivo → iterar con feedback
+### Entregables
+
+| ID | Entregable | Descripción |
+|----|------------|-------------|
+| F3.1 | Ingesta PBI y PBI per cápita | Tipo D - manual |
+| F3.2 | Ingesta pobreza e indigencia | Tipo D - manual |
+| F3.3 | Ingesta desempleo | Tipo A - trimestral |
+| F3.4 | Ingesta salario mínimo (SMVM) | Tipo D - manual |
+| F3.5 | Ingesta salario promedio registrado | Tipo A - mensual |
+| F3.6 | Ingesta consumo carne (CICCRA) | Tipo B - Excel/CSV |
+| F3.7 | Ingesta consumo leche (OCLA) | Tipo B - Excel/CSV |
+| F3.8 | Ingesta producción industrial | Tipo A - mensual |
+| F3.9 | Ingesta ventas en supermercados | Tipo A - mensual |
+| F3.10 | Ingesta patentamiento autos (ACARA) | Tipo B - PDF/Excel |
+| F3.11 | Ingesta deuda externa | Tipo A - trimestral |
+| F3.12 | Secciones completas del dashboard | Todas las categorías |
+
+### Métricas Incluidas
+- PBI total
+- PBI per cápita
+- Pobreza
+- Indigencia
+- Desempleo
+- Salario mínimo
+- Salario promedio registrado
+- Consumo de carne vacuna
+- Consumo de leche
+- Producción industrial
+- Ventas en supermercados
+- Patentamiento de autos
+- Deuda externa
+
+### Criterio de Éxito
+Las 22 métricas están disponibles en la aplicación con datos históricos.
 
 ---
 
-*Revisar priorización cada 2 semanas según feedback y avances.*
+## Fase 4 — Calidad y Extras (Prioridad Baja)
+
+### Objetivo
+Mejoras de UX, admin, exportación y polish final.
+
+### Entregables
+
+| ID | Entregable | Descripción |
+|----|------------|-------------|
+| F4.1 | Interfaz de admin | Carga manual de datos |
+| F4.2 | Exportación CSV | Descarga de datos históricos |
+| F4.3 | Comparación de métricas | Gráfico con eje dual |
+| F4.4 | Alertas de nuevos datos | Notificaciones push |
+| F4.5 | Modo oscuro | Theme completo |
+| F4.6 | Modo claro | Theme alternativo |
+| F4.7 | Optimizaciones de performance | Lazy loading, memoización |
+
+### Criterio de Éxito
+App lista para producción con features premium.
+
+---
+
+## Matriz de Priorización MoSCoW por Fase
+
+### Fase 1 (Must Have)
+| Feature | Categoría |
+|---------|-----------|
+| Dashboard con 5 indicadores principales | M-01 |
+| Gráficos de trends interactivos | M-02 |
+| Filtro rango de fechas | M-03 |
+| Base de datos Supabase | M-05 |
+| Consumo APIs (BCRA, INDEC) | M-06 |
+| Tema oscuro | M-08 |
+| Navegación bottom tabs | M-09 |
+
+### Fase 2 (Should Have)
+| Feature | Categoría |
+|---------|-----------|
+| Datos en vivo (blue, MEP, CCL) | S-01 |
+| Riesgo país en vivo | S-02 |
+| Indicadores de última actualización | S-03 |
+| Pull-to-refresh | S-04 |
+
+### Fase 3 (Should Have - extensión)
+| Feature | Categoría |
+|---------|-----------|
+| 22 métricas completas | S-05 |
+| Secciones del dashboard por categoría | S-06 |
+| Filtro interanual vs. acumulado | S-07 |
+| Filtro real vs. nominal | S-08 |
+
+### Fase 4 (Could Have)
+| Feature | Categoría |
+|---------|-----------|
+| Interfaz admin | C-01 |
+| Exportación CSV | C-02 |
+| Comparación de métricas | C-03 |
+| Notificaciones push | C-04 |
+| Tema claro | C-05 |
+
+---
+
+## Dependencias entre Fases
+
+```
+Fase 1 (Fundación)
+    ↓
+Fase 2 (Datos en Vivo)
+    ↓
+Fase 3 (Históricos Completos)
+    ↓
+Fase 4 (Calidad y Extras)
+```
+
+**Notas:**
+- Fase 1 es prerequisito para todo
+- Fase 2 y 3 pueden paralelizar parcialmente
+- Fase 4 requiere todas las anteriores
+
+---
+
+## Timeline Sugerido
+
+| Fase | Duración | Entregable Principal |
+|------|----------|---------------------|
+| Fase 1 | 3-4 semanas | MVP funcional |
+| Fase 2 | 2-3 semanas | Tipos de cambio en vivo |
+| Fase 3 | 3-4 semanas | 22 métricas disponibles |
+| Fase 4 | 2 semanas | App lista para producción |
+
+**Total estimado: 10-13 semanas**
+
+---
+
+*Revisar priorización según feedback y avances reales del proyecto.*

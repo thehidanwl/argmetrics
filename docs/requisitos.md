@@ -3,7 +3,7 @@
 ## Requisitos Funcionales
 
 ### RF-01: Visualización de Indicadores Económicos
-- **RF-01.01** La app debe mostrar gráficos de trends para: inflación mensual/anual, dólar (oficial, blue, CCL, MEP), tasa de desempleo, PBI, PBI per cápita, índice de pobreza, índice de indigencia, balanza comercial, riesgo país.
+- **RF-01.01** La app debe mostrar gráficos de trends para las 22 métricas definidas (inflación, dólar, PBI, pobreza, etc.)
 - **RF-01.02** Cada indicador debe tener su propia vista detail con historial de datos.
 - **RF-01.03** Los gráficos deben ser interactivos (zoom, pan, tooltip con valores).
 
@@ -14,84 +14,172 @@
 - **RF-02.04** Los filtros deben persistir entre sesiones.
 
 ### RF-03: Dashboard Principal
-- **RF-03.01** Dashboard con vista resumida de los 5 indicadores más relevantes.
-- **RF-03.02** Tarjetas de resumen con valor actual, variación vs. período anterior, y mini-sparkline.
+- **RF-03.01** Dashboard con vista resumida de los indicadores por categoría.
+- **RF-03.02** Tarjetas de resumen con valor actual, variación vs. período anterior.
 - **RF-03.03** Navegación rápida entre indicadores desde el dashboard.
 
 ### RF-04: Gestión de Datos
-- **RF-04.01** Consumo de APIs externas (BCRA, INDEC, etc.) para datos en tiempo real.
-- **RF-04.02** Base de datos propia (Supabase) para caché y datos históricos no disponibles vía API.
-- **RF-04.03** Sincronización automática en background cuando hay conexión.
-- **RF-04.04** Modo offline: mostrar últimos datos disponibles con indicador de antigüedad.
+- **RF-04.01** Consumo de APIs externas (BCRA, INDEC, Bluelytics, etc.) para datos en tiempo real.
+- **RF-04.02** Base de datos propia (Supabase/PostgreSQL) para caché y datos históricos.
+- **RF-04.03** Sistema de caché con TTL configurable (30 min para dólar, 1 hora para riesgo país).
+- **RF-04.04** Log de ingestas para auditoría y diagnóstico.
 
-### RF-05: Alertas y Notificaciones
-- **RF-05.01** Notificaciones push cuando un indicador supera un umbral configurable.
-- **RF-05.02** Alertas de "nuevo dato disponible" cuando se actualiza alguna fuente.
+---
 
-### RF-06: Interfaz de Usuario
-- **RF-06.01** Diseño atractivo visualmente con tema oscuro (dark mode por defecto).
-- **RF-06.02** Soporte para modo claro.
-- **RF-06.03** Gráficos animados con transiciones suaves.
-- **RF-06.04** Loading states y skeleton loaders durante carga de datos.
+## Modelo de Datos
 
-### RF-07: Configuración y Personalización
-- **RF-07.01** Selector de indicadores favoritos para el dashboard.
-- **RF-07.02** Configuración de umbrales de alerta por indicador.
-- **RF-07.03** Opción de cambiar frecuencia de actualización (manual, cada 1h, cada 6h).
+### Tabla: metrics (Series temporales)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Identificador único |
+| category | string | economy, social, consumption |
+| name | string | inflation, usd_official, poverty, etc. |
+| value | decimal | Valor numérico |
+| date | date | Fecha del dato |
+| period_type | string | daily, monthly, quarterly, annually |
+| source | string | INDEC, BCRA, CICCRA, etc. |
+| created_at | timestamp | Fecha de creación |
+| updated_at | timestamp | Fecha de actualización |
+
+### Tabla: live_cache (Caché de datos en vivo)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| key | string | PK - identificador del dato |
+| value | jsonb | Valor cacheado |
+| fetched_at | timestamp | Cuándo se obtuvo |
+| expires_at | timestamp | Cuándo expira el cache |
+
+### Tabla: ingestion_log (Log de ingestas)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| id | UUID | Identificador único |
+| source | string | Fuente del dato |
+| metric | string | Métrica ingestada |
+| status | string | success, error, partial |
+| rows_processed | int | Filas procesadas |
+| error_message | text | Mensaje de error si falló |
+| executed_at | timestamp | Cuándo se ejecutó |
+
+---
+
+## Tipos de Ingesta
+
+### Tipo A - API con cron diario
+- Script que llama a APIs (BCRA, bluelytics histórico)
+- Ejecución: una vez por día en horario de baja actividad
+- Ejemplo: dólar oficial, inflación
+
+### Tipo B - Descarga y parseo de Excel/CSV
+- Script que descarga archivos de INDEC, CICCRA, OCLA
+- Requiere mapeo explícito de columnas
+- Tolerante a cambios de formato
+
+### Tipo C - Caché de datos en vivo
+- Verifica TTL antes de llamar a API externa
+- TTL: dólar blue = 30 min, riesgo país = 1 hora
+- Si expira: llama, guarda, devuelve
+- Si no expira: devuelve cache
+
+### Tipo D - Carga manual
+- Interfaz de admin para datos de publicación irregular
+- Pobreza, indigencia, PBI, etc.
+- Validación antes de guardar
+
+---
+
+## Endpoints del Backend API
+
+```
+GET /v1/metrics?category=economy&from=2020-01-01&to=2024-12-31
+GET /v1/metrics/{name}?from=...&to=...&period=monthly
+GET /v1/live/usd → dólar blue, MEP, CCL, oficial en tiempo real
+GET /v1/live/country-risk → riesgo país en tiempo real
+GET /v1/health → estado del sistema y últimas ingestas
+```
+
+### Requisitos de API
+- Formato JSON consistente
+- Parámetros: rango de fechas, período de agregación
+- Rate limiting en endpoints públicos
+- Cache de responses en alta demanda
+
+---
+
+## 22 Métricas por Grupos
+
+### Grupo 1 — Economía (12 métricas)
+| Métrica | Fuente | Frecuencia | Tipo Ingesta |
+|---------|--------|------------|--------------|
+| Inflación mensual (IPC) | INDEC | Mensual | A |
+| Inflación interanual | Calculado | - | Query |
+| Dólar oficial | BCRA API | Diaria | A |
+| Dólar blue | Bluelytics | Tiempo real | C (30min) |
+| Dólar MEP | Ámbito/Rava | Tiempo real | C (30min) |
+| Dólar CCL | Ámbito/Rava | Tiempo real | C (30min) |
+| Riesgo país (EMBI) | JP Morgan | Tiempo real | C (1h) |
+| Tasa de interés BCRA | BCRA API | Diaria | A |
+| Reservas BCRA | BCRA API | Diaria | A |
+| PBI total | INDEC/BM | Anual | D |
+| PBI per cápita | INDEC/BM | Anual | D |
+| Deuda externa | Min. Economía | Trimestral | A |
+
+### Grupo 2 — Mercado laboral y social (5 métricas)
+| Métrica | Fuente | Frecuencia | Tipo Ingesta |
+|---------|--------|------------|--------------|
+| Pobreza | INDEC EPH | Semestral | D |
+| Indigencia | INDEC EPH | Semestral | D |
+| Desempleo | INDEC EPH | Trimestral | A |
+| Salario mínimo (SMVM) | Min. Trabajo | Según paritarias | D |
+| Salario promedio registrado | INDEC | Mensual | A |
+
+### Grupo 3 — Consumo (5 métricas)
+| Métrica | Fuente | Frecuencia | Tipo Ingesta |
+|---------|--------|------------|--------------|
+| Consumo de carne vacuna | CICCRA | Mensual | B |
+| Consumo de leche | OCLA | Mensual | B |
+| Producción industrial | INDEC | Mensual | A |
+| Ventas en supermercados | INDEC | Mensual | A |
+| Patentamiento de autos | ACARA | Mensual | B |
+
+---
+
+## Fuentes de Datos
+
+| Fuente | URL base | Tipo de acceso |
+|--------|----------|----------------|
+| BCRA | api.bcra.gob.ar | API REST oficial |
+| INDEC | indec.gob.ar | Excel/CSV descargable |
+| Bluelytics | api.bluelytics.com.ar/v2 | API REST informal |
+| Ámbito | ambito.com | Scraping/API no oficial |
+| Banco Mundial | api.worldbank.org/v2 | API REST oficial |
+| CICCRA | ciccra.com.ar | Excel descargable |
+| OCLA | ocla.com.ar | Excel descargable |
+| ACARA | acara.org.ar | PDF/Excel descargable |
 
 ---
 
 ## Requisitos No Funcionales
 
 ### RNF-01: Performance
-- **RNF-01.01** La app debe cargar el dashboard en menos de 2 segundos en condiciones normales.
-- **RNF-01.02** Los gráficos deben renderizarse a 60fps durante interacciones.
-- **RNF-01.03** Tiempo de respuesta de APIs propias < 500ms.
+- **RNF-01.01** Dashboard carga en menos de 2 segundos.
+- **RNF-01.02** Gráficos a 60fps durante interacciones.
+- **RNF-01.03** Tiempo de respuesta APIs propias < 500ms.
 
 ### RNF-02: Compatibilidad
-- **RNF-02.01** Soporte para iOS 14+ y Android 8+ (API 26+).
-- **RNF-02.02**适配多种屏幕尺寸 (phones y tablets).
+- **RNF-02.01** iOS 14+ y Android 8+ (API 26+).
+- **RNF-02.02** Responsive: phones y tablets.
 
 ### RNF-03: Disponibilidad
-- **RNF-03.01** Modo offline funcional con últimos datos cacheados.
-- **RNF-03.02** Graceful degradation: si una API falla, mostrar datos de fallback.
+- **RNF-03.01** Modo offline con últimos datos cacheados.
+- **RNF-03.02** Graceful degradation: si una API falla, mostrar fallback.
 
 ### RNF-04: Seguridad
-- **RNF-04.01** Datos almacenados de forma segura en el dispositivo.
-- **RNF-04.02** HTTPS obligatorio para todas las comunicaciones.
-- **RNF-04.03** No almacenar credenciales sensibles en texto plano.
+- **RNF-04.01** HTTPS obligatorio.
+- **RNF-04.2** No almacenar credenciales en texto plano.
 
 ### RNF-05: Mantenibilidad
-- **RNF-05.01** Código modular con separación clara de responsabilidades.
-- **RNF-05.02** Documentación de APIs y estructura de datos.
-- **RNF-05.03** Tests unitarios覆盖率 > 70%.
-
-### RNF-06: Accesibilidad
-- **RNF-06.01** Soporte para VoiceOver/TalkBack.
-- **RNF-06.02** Contraste mínimo WCAG AA (4.5:1 para texto).
-- **RNF-06.03** Tamaño de touch targets mínimo 44x44pt.
-
----
-
-## Datos a Visualizar (Indicadores)
-
-| ID | Indicador | Fuente Primaria | Frecuencia |
-|----|-----------|-----------------|------------|
-| IND-01 | Inflación Mensual | INDEC / BCRA | Mensual |
-| IND-02 | Inflación Anual (Acumulada) | INDEC | Anual |
-| IND-03 | Dólar Oficial (BCRA) | BCRA | Diaria |
-| IND-04 | Dólar Blue | Ámbito / Reuters | Diaria |
-| IND-05 | Dólar CCL | BCRA | D-06 | Dólar MEP | BCRA | Diaria |
-| INDiaria |
-| IND-07 | Tasa de Desempleo | INDEC | Trimestral |
-| IND-08 | PBI (Producto Bruto Interno) | INDEC | Trimestral |
-| IND-09 | PBI Per Cápita | INDEC | Trimestral |
-| IND-10 | Índice de Pobreza | INDEC | Semestral |
-| IND-11 | Índice de Indigencia | INDEC | Semestral |
-| IND-12 | Balanza Comercial | INDEC | Mensual |
-| IND-13 | Riesgo País (EMBI+) | JP Morgan | Diaria |
-| IND-14 | Tasa de Política Monetaria | BCRA | Diaria |
-| IND-15 | Reservas Internacionales | BCRA | Diaria |
+- **RNF-05.01** Código modular con separación de responsabilidades.
+- **RNF-05.02** Tests unitarios覆盖率 > 70%.
 
 ---
 
