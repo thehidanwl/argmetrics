@@ -6,22 +6,24 @@ Proyecto de aplicación web y mobile para visualizar datos económicos de Argent
 
 ---
 
-## Fase 1 — Fundación (Semana 1-4)
+## Progreso Actual
 
-### 1.1 Configuración del Proyecto
-- [ ] 1.1.1 Inicializar proyecto Expo con TypeScript
-- [ ] 1.1.2 Configurar ESLint + Prettier
+### Fase 1 — Fundación
+
+#### 1.1 Configuración del Proyecto
+- [x] 1.1.1 Estructura de carpetas del proyecto (monorepo: /backend + /mobile)
+- [x] 1.1.2 Contrato de API documentado en docs/api-contract.md
 - [ ] 1.1.3 Setup Git (repo, .gitignore, conventional commits)
 - [ ] 1.1.4 Configurar Vercel para deploy
 
-### 1.2 Modelo de Datos (PostgreSQL/Supabase)
+#### 1.2 Modelo de Datos (PostgreSQL/Supabase)
 - [ ] 1.2.1 Crear tabla **metrics** (id, category, name, value, date, period_type, source, created_at, updated_at)
 - [ ] 1.2.2 Crear tabla **live_cache** (key, value, fetched_at, expires_at)
 - [ ] 1.2.3 Crear tabla **ingestion_log** (id, source, metric, status, rows_processed, error_message, executed_at)
 - [ ] 1.2.4 Configurar políticas RLS en Supabase
 - [ ] 1.2.5 Crear tipos TypeScript para las entidades
 
-### 1.3 Ingesta Tipo A - APIs con Cron
+#### 1.3 Ingesta Tipo A - APIs con Cron
 - [ ] 1.3.1 Script ingesta dólar oficial (BCRA API)
 - [ ] 1.3.2 Script ingesta inflación (INDEC)
 - [ ] 1.3.3 Script ingesta tasa de interés BCRA
@@ -29,19 +31,19 @@ Proyecto de aplicación web y mobile para visualizar datos económicos de Argent
 - [ ] 1.3.5 Implementar logging en ingestion_log
 - [ ] 1.3.6 Configurar cron jobs (daily)
 
-### 1.4 Backend API
-- [ ] 1.4.1 Setup Express + TypeScript
+#### 1.4 Backend API
+- [x] 1.4.1 Setup Express + TypeScript (estructura creada)
 - [ ] 1.4.2 Endpoint GET /v1/metrics?category=&from=&to=
 - [ ] 1.4.3 Endpoint GET /v1/metrics/{name}?from=&to=&period=
 - [ ] 1.4.4 Endpoint GET /v1/health
 - [ ] 1.4.5 Rate limiting básico
-- [ ] 1.4.6部署 a Vercel
+- [ ] 1.4.6 Deploy a Vercel
 
-### 1.5 Frontend - Core
-- [ ] 1.5.1 Setup React Navigation (bottom tabs)
-- [ ] 1.5.2 Configurar tema oscuro (dark mode)
-- [ ] 1.5.3 Crear componente LineChart (react-native-gifted-charts)
-- [ ] 1.5.4 Crear componente IndicatorCard
+#### 1.5 Frontend - Core (Mobile)
+- [x] 1.5.1 Setup React Navigation (bottom tabs)
+- [x] 1.5.2 Configurar tema oscuro (dark mode)
+- [x] 1.5.3 Estructura de componentes creada
+- [x] 1.5.4 API client y store Zustand
 - [ ] 1.5.5 Implementar Dashboard con primeras métricas
 - [ ] 1.5.6 Filtro rango de fechas (año inicio/fin)
 
@@ -144,52 +146,43 @@ Proyecto de aplicación web y mobile para visualizar datos económicos de Argent
 
 ---
 
-## Dependencias entre Tareas
+## Estructura del Proyecto
 
 ```
-Fase 1:
-1.1 → 1.2 → 1.3 → 1.4 → 1.5
-
-Fase 2:
-2.1 → 2.2 → 2.3 → 2.4
-
-Fase 3:
-3.1 → 3.2 → 3.3 → 3.4 → 3.5
-
-Fase 4:
-4.1 → 4.2 → 4.3 → 4.4 → 4.5 → 4.6
+argmetrics/
+├── backend/
+│   ├── src/
+│   │   ├── index.ts          # Entry point
+│   │   ├── types/             # TypeScript types
+│   │   ├── routes/            # API routes (pendiente)
+│   │   ├── controllers/       # Controllers (pendiente)
+│   │   ├── services/          # Business logic (pendiente)
+│   │   ├── scripts/           # Ingestion scripts
+│   │   └── utils/             # Utilities
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example
+├── mobile/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── api/               # API client
+│   │   ├── components/         # UI components
+│   │   ├── screens/           # App screens
+│   │   ├── navigation/        # Navigation config
+│   │   ├── store/             # Zustand stores
+│   │   ├── types/             # TypeScript types
+│   │   └── utils/             # Utilities
+│   ├── package.json
+│   └── tsconfig.json
+├── docs/
+│   ├── api-contract.md        # API documentation
+│   ├── historias-usuario.md
+│   ├── requisitos.md
+│   └── priorizacion.md
+├── SPEC.md
+└── .gitignore
 ```
 
-**Paralelizables:**
-- Fase 2 puede avanzar en paralelo con Fase 3 parcialmente
-- 4.2 y 4.3 pueden paralelizar
-
 ---
 
-## Stack Tecnológico
-
-| Capa | Tecnología |
-|------|------------|
-| Mobile | Expo SDK 52 + React Native |
-| Backend | Node.js + Express + TypeScript |
-| DB | Supabase (PostgreSQL) |
-| Charts | react-native-gifted-charts |
-| UI | React Native Paper |
-| State | Zustand |
-| HTTP | Axios |
-| Deploy | Vercel |
-
----
-
-## Milestones
-
-| Milestone | Entregable | Semana |
-|-----------|------------|--------|
-| M1: Fundación | DB + API + Dashboard básico | 4 |
-| M2: Datos en Vivo | Tipos de cambio + riesgo país | 7 |
-| M3: Históricos | 22 métricas disponibles | 11 |
-| M4: Calidad | Admin + Export + Polish | 13 |
-
----
-
-*Este plan es una guía. Ajustar según avances reales.*
+*Actualizado: 2026-03-08 - Fase 1 en progreso: Estructura creada*
