@@ -45,3 +45,4 @@ expo-cli.log
 # Misc
 *.tgz
 .cache/
+.vercel

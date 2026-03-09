@@ -7,7 +7,7 @@
  */
 
 import axios from 'axios';
-import { prisma } from '../config/database.js';
+import { prisma } from '../../config/database';
 
 const BCRA_API_URL = process.env.BCRA_API_URL || 'https://api.bcra.gob.ar';
 const CACHE_KEY = 'usd_official';
@@ -27,7 +27,7 @@ async function fetchUSDOfficial(): Promise<{ buy: number; sell: number; date: st
     if (response.data && Array.isArray(response.data)) {
       // Find USD official rate from response
       const usdData = response.data.find(
-        (item: { moneda: string }) => moneda === 'Dolar Oficial'
+        (item: { moneda: string }) => item.moneda === 'Dolar Oficial'
       );
 
       if (usdData) {

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { prisma, parseJsonField } from '../config/database.js';
+import { prisma, parseJsonField } from '../config/database';
 
 // Query validation schema
 const metricsQuerySchema = z.object({

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { prisma, parseJsonField } from '../config/database.js';
+import { prisma, parseJsonField } from '../config/database';
 
 const router = Router();
 

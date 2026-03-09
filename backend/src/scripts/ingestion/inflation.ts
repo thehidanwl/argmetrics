@@ -10,7 +10,7 @@
  */
 
 import axios from 'axios';
-import { prisma } from '../config/database.js';
+import { prisma } from '../../config/database';
 
 const CACHE_KEY = 'inflation';
 
