@@ -13,8 +13,5 @@
       "path": "/api/v1/ingest/inflation",
       "schedule": "0 8 1 * *"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "@argmetrics-database-url"
-  }
+  ]
 }
