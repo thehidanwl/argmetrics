@@ -4,7 +4,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = req.url || '';
   
   // Health check
-  if (path === '/v1/health' || path === '/api/v1/health') {
+  if (path.includes('/v1/health')) {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -14,7 +14,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   // Metrics - simple response for now
-  if (path.startsWith('/v1/metrics') || path.startsWith('/api/v1/metrics')) {
+  if (path.includes('/v1/metrics')) {
     res.status(200).json({ 
       data: [],
       message: 'Metrics endpoint - DB not connected yet'
@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   
   // Live data
-  if (path.startsWith('/v1/live') || path.startsWith('/api/v1/live')) {
+  if (path.includes('/v1/live')) {
     res.status(200).json({
       message: 'Live endpoint - coming soon'
     });
