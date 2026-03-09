@@ -2,8 +2,7 @@
 
 ## Base URL
 ```
-Production: https://argmetrics-api.vercel.app
-Staging: https://argmetrics-api-staging.vercel.app
+Production: https://argmetrics.vercel.app
 Local: http://localhost:3000
 ```
 
@@ -14,19 +13,34 @@ All endpoints use `/v1/` prefix. Breaking changes require version bump.
 
 ## Endpoints
 
-### 1. GET /v1/metrics
+### 1. GET /v1/health
+
+Health check with database connection status.
+
+**Response 200:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-15T14:30:00Z",
+  "database": "connected"
+}
+```
+
+---
+
+### 2. GET /v1/metrics
 
 Get time series metrics with optional filters.
+**Data source:** PostgreSQL (Supabase) via Prisma
 
 **Query Parameters:**
 | Param | Type | Required | Description |
 |-------|------|----------|-------------|
 | category | string | No | Filter by category: `economy`, `social`, `consumption` |
-| name | string | No | Filter by metric name (e.g., `inflation`, `usd_official`) |
+| name | string | No | Filter by metric name (e.g., `inflation`, `usd_oficial`, `usd_blue`) |
 | from | string | No | Start date (ISO 8601: `YYYY-MM-DD`) |
 | to | string | No | End date (ISO 8601: `YYYY-MM-DD`) |
-| period | string | No | Aggregation: `daily`, `monthly`, `quarterly`, `annually` |
-| limit | number | No | Max results (default: 1000, max: 10000) |
+| limit | number | No | Max results (default: 100, max: 10000) |
 | offset | number | No | Pagination offset (default: 0) |
 
 **Response 200:**
@@ -34,183 +48,31 @@ Get time series metrics with optional filters.
 {
   "data": [
     {
-      "id": "uuid",
+      "id": "usd_oficial-2024-01-15",
       "category": "economy",
-      "name": "inflation",
-      "value": 6.2,
-      "date": "2024-01-01",
-      "periodType": "monthly",
-      "source": "INDEC",
-      "createdAt": "2024-01-15T10:00:00Z",
-      "updatedAt": "2024-01-15T10:00:00Z"
+      "name": "usd_oficial",
+      "value": 820.50,
+      "date": "2024-01-15T00:00:00Z",
+      "periodType": "daily",
+      "source": "Bluelytics",
+      "createdAt": "2024-01-15T04:00:00Z",
+      "updatedAt": "2024-01-15T04:00:00Z"
     }
   ],
   "pagination": {
     "total": 150,
-    "limit": 1000,
+    "limit": 100,
     "offset": 0,
     "hasMore": true
   }
 }
 ```
 
-**Response 400:**
-```json
-{
-  "error": {
-    "code": "INVALID_PARAMETER",
-    "message": "Invalid date format. Use YYYY-MM-DD"
-  }
-}
-```
-
 ---
 
-### 2. GET /v1/metrics/:name
+### 3. GET /v1/metrics/categories
 
-Get specific metric time series.
-
-**Path Parameters:**
-| Param | Type | Description |
-|-------|------|-------------|
-| name | string | Metric name (e.g., `inflation`, `usd_blue`, `poverty`) |
-
-**Query Parameters:** Same as `/v1/metrics`
-
-**Response 200:**
-```json
-{
-  "data": {
-    "name": "inflation",
-    "category": "economy",
-    "description": "Índice de Precios al Consumidor (IPC) - Inflation rate",
-    "unit": "percentage",
-    "latest": {
-      "value": 6.2,
-      "date": "2024-01-01",
-      "variation": 2.1,
-      "variationType": "monthly"
-    },
-    "series": [
-      {
-        "date": "2024-01-01",
-        "value": 6.2
-      }
-    ]
-  }
-}
-```
-
-**Response 404:**
-```json
-{
-  "error": {
-    "code": "METRIC_NOT_FOUND",
-    "message": "Metric 'xyz' does not exist"
-  }
-}
-```
-
----
-
-### 3. GET /v1/live/usd
-
-Get real-time USD exchange rates (cached).
-
-**Response 200:**
-```json
-{
-  "data": {
-    "official": {
-      "buy": 820.50,
-      "sell": 860.50,
-      "updatedAt": "2024-01-15T14:30:00Z"
-    },
-    "blue": {
-      "buy": 1020.00,
-      "sell": 1040.00,
-      "updatedAt": "2024-01-15T14:25:00Z"
-    },
-    "mep": {
-      "buy": 985.00,
-      "sell": 995.00,
-      "updatedAt": "2024-01-15T14:20:00Z"
-    },
-    "ccl": {
-      "buy": 1010.00,
-      "sell": 1025.00,
-      "updatedAt": "2024-01-15T14:20:00Z"
-    },
-    "brecha": {
-      "value": 20.5,
-      "unit": "percentage"
-    }
-  },
-  "cached": true,
-  "expiresAt": "2024-01-15T15:00:00Z"
-}
-```
-
----
-
-### 4. GET /v1/live/country-risk
-
-Get country risk (EMBI Argentina) - cached.
-
-**Response 200:**
-```json
-{
-  "data": {
-    "value": 1850,
-    "unit": "basis_points",
-    "variation": -15,
-    "variationType": "daily",
-    "updatedAt": "2024-01-15T14:00:00Z"
-  },
-  "cached": true,
-  "expiresAt": "2024-01-15T15:00:00Z"
-}
-```
-
----
-
-### 5. GET /v1/health
-
-Health check with ingestion status.
-
-**Response 200:**
-```json
-{
-  "status": "healthy",
-  "version": "1.0.0",
-  "uptime": 86400,
-  "timestamp": "2024-01-15T14:30:00Z",
-  "database": {
-    "status": "connected",
-    "latencyMs": 12
-  },
-  "ingestions": {
-    "lastSuccess": {
-      "source": "bcra",
-      "metric": "usd_official",
-      "executedAt": "2024-01-15T04:00:00Z",
-      "rowsProcessed": 1
-    },
-    "lastError": {
-      "source": "indec",
-      "metric": "inflation",
-      "executedAt": "2024-01-14T04:00:00Z",
-      "errorMessage": "Failed to parse Excel file"
-    }
-  }
-}
-```
-
----
-
-### 6. GET /v1/metrics/categories
-
-Get available categories.
+Get available categories with metric count.
 
 **Response 200:**
 ```json
@@ -218,18 +80,7 @@ Get available categories.
   "data": [
     {
       "name": "economy",
-      "description": "Economic indicators",
-      "metricsCount": 12
-    },
-    {
-      "name": "social",
-      "description": "Social indicators",
-      "metricsCount": 5
-    },
-    {
-      "name": "consumption",
-      "description": "Consumption indicators",
-      "metricsCount": 4
+      "metricsCount": 15
     }
   ]
 }
@@ -237,9 +88,9 @@ Get available categories.
 
 ---
 
-### 7. GET /v1/metrics/available
+### 4. GET /v1/metrics/available
 
-Get list of all available metrics.
+Get list of all available metrics with date ranges.
 
 **Response 200:**
 ```json
@@ -248,28 +99,103 @@ Get list of all available metrics.
     {
       "name": "inflation",
       "category": "economy",
-      "description": "Índice de Precios al Consumidor",
-      "unit": "percentage",
-      "periodType": "monthly",
       "source": "INDEC",
+      "periodType": "monthly",
       "dateRange": {
-        "from": "2017-01-01",
-        "to": "2024-01-01"
+        "from": "2023-01-01",
+        "to": "2025-01-01"
       }
     },
     {
-      "name": "usd_official",
+      "name": "usd_oficial",
       "category": "economy",
-      "description": "Dólar Oficial BCRA",
-      "unit": "ars",
+      "source": "Bluelytics",
       "periodType": "daily",
-      "source": "BCRA",
       "dateRange": {
-        "from": "2020-01-01",
-        "to": "2024-01-15"
+        "from": "2024-01-01",
+        "to": "2025-03-09"
       }
     }
   ]
+}
+```
+
+---
+
+### 5. GET /v1/live/usd
+
+Get real-time USD exchange rates.
+**Data source:** Bluelytics API (https://api.bluelytics.com.ar/v2/latest)
+**Cache:** 30 minutes
+
+**Response 200:**
+```json
+{
+  "data": {
+    "oficial": {
+      "buy": 1390,
+      "sell": 1441,
+      "updatedAt": "2026-03-09T16:00:55.877104-03:00"
+    },
+    "blue": {
+      "buy": 1405,
+      "sell": 1425,
+      "updatedAt": "2026-03-09T16:00:55.877104-03:00"
+    },
+    "oficial_euro": {
+      "buy": 1511,
+      "sell": 1566,
+      "updatedAt": "2026-03-09T16:00:55.877104-03:00"
+    },
+    "blue_euro": {
+      "buy": 1527,
+      "sell": 1549,
+      "updatedAt": "2026-03-09T16:00:55.877104-03:00"
+    },
+    "brecha": {
+      "value": "-1.11",
+      "unit": "%"
+    }
+  },
+  "cached": false,
+  "fetchedAt": "2026-03-09T19:15:00Z",
+  "expiresAt": "2026-03-09T19:45:00Z"
+}
+```
+
+---
+
+## Cron Jobs (Internal)
+
+These endpoints are called by Vercel Cron for data ingestion.
+
+### 6. GET /v1/ingest/usd
+
+Ingest daily USD rates from Bluelytics.
+**Schedule:** Daily at 7:00 AM Argentina time
+**Requires:** `Authorization: Bearer {CRON_SECRET}` header
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "records": 2,
+  "timestamp": "2026-03-09T07:00:00Z"
+}
+```
+
+### 7. GET /v1/ingest/inflation
+
+Ingest monthly inflation data from INDEC.
+**Schedule:** Monthly on the 1st at 8:00 AM Argentina time
+**Requires:** `Authorization: Bearer {CRON_SECRET}` header
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "records": 25,
+  "timestamp": "2026-03-01T08:00:00Z"
 }
 ```
 
@@ -281,9 +207,7 @@ Get list of all available metrics.
 |------|-------------|-------------|
 | INVALID_PARAMETER | 400 | Invalid query parameter |
 | METRIC_NOT_FOUND | 404 | Metric does not exist |
-| CATEGORY_NOT_FOUND | 404 | Category does not exist |
 | INTERNAL_ERROR | 500 | Server error |
-| RATE_LIMITED | 429 | Too many requests |
 | SERVICE_UNAVAILABLE | 503 | External service unavailable |
 
 ---
@@ -291,14 +215,7 @@ Get list of all available metrics.
 ## Rate Limiting
 
 - **Public endpoints:** 100 requests/minute per IP
-- **Authenticated:** 1000 requests/minute
 - Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-
----
-
-## Authentication
-
-Currently not required for read endpoints. Future versions may add API keys for higher rate limits.
 
 ---
 
@@ -306,18 +223,25 @@ Currently not required for read endpoints. Future versions may add API keys for 
 
 | Endpoint | Cache TTL |
 |----------|-----------|
-| /v1/metrics | 5 minutes |
+| /v1/metrics | No cache (direct DB) |
 | /v1/live/usd | 30 minutes |
-| /v1/live/country-risk | 1 hour |
-| /v1/health | 1 minute |
+| /v1/health | No cache |
 | /v1/metrics/categories | 1 hour |
 | /v1/metrics/available | 1 hour |
 
 ---
 
-## Response Shape Standard
+## Data Sources
 
-All responses follow this structure:
+| Metric | Source | Update Frequency |
+|--------|--------|------------------|
+| usd_oficial | Bluelytics API | Daily |
+| usd_blue | Bluelytics API | Daily |
+| inflation | INDEC IPC | Monthly |
+
+---
+
+## Response Shape Standard
 
 ```typescript
 interface ApiResponse<T> {
@@ -330,13 +254,13 @@ interface ApiResponse<T> {
   };
   cached?: boolean;
   expiresAt?: string;
+  fetchedAt?: string;
 }
 
 interface ApiError {
   error: {
     code: string;
     message: string;
-    details?: Record<string, any>;
   };
 }
 ```

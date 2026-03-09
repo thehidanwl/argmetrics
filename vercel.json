@@ -1,7 +1,20 @@
 {
-  "buildCommand": "cd backend && npm install && npm run build",
+  "buildCommand": "cd backend && npm install && npx prisma generate && npm run build",
   "installCommand": "cd backend && npm install",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/ingest/usd",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/v1/ingest/inflation",
+      "schedule": "0 8 1 * *"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "@argmetrics-database-url"
+  }
 }
