@@ -58,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       if (cache && cacheAge < 30) {
         res.status(200).json({ 
-          data: cache.value, 
+          data: JSON.parse(cache.value), 
           cached: true,
           fetchedAt: cache.fetchedAt 
         });
@@ -79,13 +79,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await prisma.liveCache.upsert({
         where: { key: 'usd_rates' },
         update: { 
-          value: mockData,
+          value: JSON.stringify(mockData),
           fetchedAt: now,
           expiresAt: new Date(now.getTime() + 30 * 60 * 1000)
         },
         create: { 
           key: 'usd_rates',
-          value: mockData,
+          value: JSON.stringify(mockData),
           fetchedAt: now,
           expiresAt: new Date(now.getTime() + 30 * 60 * 1000)
         }
