@@ -3,9 +3,11 @@
 export interface USDRates {
   oficial: { buy: number; sell: number; updatedAt: string };
   blue: { buy: number; sell: number; updatedAt: string };
+  mep: { buy: number; sell: number; updatedAt: string };
+  ccl: { buy: number; sell: number; updatedAt: string };
   oficial_euro: { buy: number; sell: number; updatedAt: string };
   blue_euro: { buy: number; sell: number; updatedAt: string };
-  brecha: { value: number; unit: string };
+  brecha: { value: number | null; unit: string };
 }
 
 export interface Metric {

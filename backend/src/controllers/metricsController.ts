@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { prisma, parseJsonField } from '../config/database';
+import { getPrisma, parseJsonField, isDatabaseConnected } from '../config/database';
+import { mockMetrics } from '../config/mockData.js';
 
 // Query validation schema
 const metricsQuerySchema = z.object({
@@ -16,6 +17,32 @@ const metricsQuerySchema = z.object({
 export const getMetrics = async (req: Request, res: Response) => {
   try {
     const query = metricsQuerySchema.parse(req.query);
+
+    // If DB is not connected, return mock data
+    const prisma = getPrisma();
+    if (!prisma || !isDatabaseConnected()) {
+      console.log('📦 Returning mock metrics (DB not connected)');
+      let filtered = [...mockMetrics];
+      
+      if (query.category) {
+        filtered = filtered.filter(m => m.category === query.category);
+      }
+      if (query.name) {
+        filtered = filtered.filter(m => m.name === query.name);
+      }
+      
+      res.json({
+        data: filtered,
+        pagination: {
+          total: filtered.length,
+          limit: query.limit,
+          offset: query.offset,
+          hasMore: false,
+        },
+        mock: true,
+      });
+      return;
+    }
 
     const where: Record<string, unknown> = {};
 
@@ -78,6 +105,44 @@ export const getMetricByName = async (req: Request, res: Response) => {
   try {
     const { name } = req.params;
     const query = metricsQuerySchema.parse(req.query);
+
+    // If DB is not connected, return mock data
+    const prisma = getPrisma();
+    if (!prisma || !isDatabaseConnected()) {
+      console.log(`📦 Returning mock metric: ${name} (DB not connected)`);
+      const metric = mockMetrics.find(m => m.name === name);
+      
+      if (!metric) {
+        res.status(404).json({
+          error: {
+            code: 'METRIC_NOT_FOUND',
+            message: `Metric '${name}' does not exist`,
+          },
+        });
+        return;
+      }
+
+      res.json({
+        data: {
+          name: metric.name,
+          category: metric.category,
+          description: getMetricDescription(metric.name),
+          unit: metric.unit,
+          latest: {
+            value: metric.value,
+            date: metric.date.toISOString().split('T')[0],
+            variation: 0,
+            variationType: 'period',
+          },
+          series: [{
+            date: metric.date.toISOString().split('T')[0],
+            value: metric.value,
+          }],
+        },
+        mock: true,
+      });
+      return;
+    }
 
     const where = {
       name,
@@ -160,6 +225,17 @@ export const getMetricByName = async (req: Request, res: Response) => {
 };
 
 export const getCategories = async (req: Request, res: Response) => {
+  const prisma = getPrisma();
+  if (!prisma || !isDatabaseConnected()) {
+    const categories = [
+      { name: 'economy', description: 'Economic indicators', metricsCount: 9 },
+      { name: 'social', description: 'Social indicators', metricsCount: 2 },
+      { name: 'consumption', description: 'Consumption indicators', metricsCount: 1 },
+    ];
+    res.json({ data: categories, mock: true });
+    return;
+  }
+
   const categories = await prisma.metric.groupBy({
     by: ['category'],
     _count: { name: true },
@@ -175,6 +251,24 @@ export const getCategories = async (req: Request, res: Response) => {
 };
 
 export const getAvailableMetrics = async (req: Request, res: Response) => {
+  const prisma = getPrisma();
+  if (!prisma || !isDatabaseConnected()) {
+    const metrics = mockMetrics.map(m => ({
+      name: m.name,
+      category: m.category,
+      description: getMetricDescription(m.name),
+      unit: m.unit,
+      periodType: m.periodType,
+      source: m.source,
+      dateRange: {
+        from: m.date.toISOString().split('T')[0],
+        to: m.date.toISOString().split('T')[0],
+      },
+    }));
+    res.json({ data: metrics, mock: true });
+    return;
+  }
+
   const metrics = await prisma.metric.findMany({
     distinct: ['name'],
     select: {

@@ -1,6 +1,6 @@
 import { USDRates, MetricsResponse, Metric, HealthStatus, MetricCategory } from '@/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://argmetrics.vercel.app/api/v1';
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {

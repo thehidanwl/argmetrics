@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -13,6 +14,15 @@ const PORT = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    /\.vercel\.app$/,
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Rate limiting - general
 const generalLimiter = rateLimit({
@@ -74,7 +84,7 @@ const swaggerOptions = {
       }
     },
     security: [{
-      BearerAuth: []
+      BearerAuth: [] as string[]
     }]
   },
   apis: ['./src/routes/*.ts', './src/controllers/*.ts']
