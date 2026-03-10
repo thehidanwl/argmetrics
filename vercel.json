@@ -2,7 +2,7 @@
   "buildCommand": "cd backend && npm install && npx prisma generate && npm run build",
   "installCommand": "cd backend && npm install",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
+    { "source": "/api/(.*)", "destination": "/backend/api" }
   ],
   "crons": [
     {
