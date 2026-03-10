@@ -5,7 +5,9 @@
   "description": "ArgMetrics - Argentine Economic Data Platform",
   "scripts": {
     "dev": "echo 'Use cd backend && npm run dev'",
-    "build": "cd backend && npm install && npx prisma generate && npm run build"
+    "build": "cd backend && npm install && npx prisma generate && npm run build",
+    "build:web": "cd web && npm install && npm run build",
+    "build:api": "cd backend && npm install && npx prisma generate && npm run build"
   },
   "dependencies": {
     "@prisma/client": "^5.9.0"

@@ -1,7 +1,6 @@
 {
-  "buildCommand": "cd web && npm run build",
-  "installCommand": "cd web && npm install",
-  "outputDirectory": "web/out",
+  "buildCommand": "npm run build:web && npm run build:api",
+  "installCommand": "npm install",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" }
   ],
