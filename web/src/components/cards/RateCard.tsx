@@ -17,21 +17,21 @@ export function RateCard({ title, buy, sell, variation = 0, icon = '💵', varia
     switch (variant) {
       case 'blue': 
         return { 
-          accent: '#22C55E', 
-          bg: 'rgba(34, 197, 94, 0.05)',
-          gradient: 'from-[#22C55E]/10 to-transparent'
+          accent: '#10b981', 
+          bg: 'rgba(16, 185, 129, 0.08)',
+          gradient: 'from-[rgba(16,185,129,0.08)] to-transparent'
         };
       case 'official': 
         return { 
-          accent: '#8B949E', 
-          bg: 'rgba(139, 148, 158, 0.05)',
-          gradient: 'from-[#8B949E]/10 to-transparent'
+          accent: '#a1a1aa', 
+          bg: 'rgba(161, 161, 170, 0.08)',
+          gradient: 'from-[rgba(161,161,170,0.08)] to-transparent'
         };
       default: 
         return { 
-          accent: '#6366F1', 
-          bg: 'rgba(99, 102, 241, 0.05)',
-          gradient: 'from-[#6366F1]/10 to-transparent'
+          accent: '#818cf8', 
+          bg: 'rgba(129, 140, 248, 0.08)',
+          gradient: 'from-[rgba(129,140,248,0.08)] to-transparent'
         };
     }
   };
@@ -41,46 +41,60 @@ export function RateCard({ title, buy, sell, variation = 0, icon = '💵', varia
 
   return (
     <Card variant="gradient" padding="sm" hover className="relative overflow-hidden group">
-      {/* Background Gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${styles.gradient} opacity-50`} />
+      {/* Background Gradient - Subtle */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${styles.gradient} opacity-60`} />
+      
+      {/* Border gradient on hover */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+        style={{ background: `linear-gradient(135deg, ${styles.accent}20, transparent)`, border: `1px solid ${styles.accent}30` }} 
+      />
       
       <div className="relative">
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm">{icon}</span>
-            <span className="text-[10px] font-semibold text-[#F0F6FC] truncate">{title}</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-base">{icon}</span>
+            <span className="text-[11px] font-semibold text-[#f4f4f5] truncate">{title}</span>
           </div>
           {variation !== 0 && (
             <div className={`
-              flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-semibold
-              ${isPositive ? 'bg-[#22C55E]/15 text-[#22C55E]' : 'bg-[#EF4444]/15 text-[#EF4444]'}
+              flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold
+              ${isPositive 
+                ? 'bg-[var(--success-bg)] text-[var(--success)] border border-[var(--success-border)]' 
+                : 'bg-[var(--error-bg)] text-[var(--error)] border border-[var(--error-border)]'
+              }
             `}>
-              {isPositive ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+              {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               {Math.abs(variation).toFixed(1)}%
             </div>
           )}
         </div>
 
-        {/* Rates - Compact grid */}
-        <div className="grid grid-cols-2 gap-1.5">
+        {/* Rates - Clean grid */}
+        <div className="grid grid-cols-2 gap-2">
           {/* Buy */}
-          <div className="bg-[#0D1117]/50 rounded-lg p-2 border border-[#30363D]/50">
-            <div className="text-[8px] uppercase tracking-wider text-[#6E7681] mb-0.5">
+          <div 
+            className="rounded-xl p-3 border transition-colors duration-200 group-hover:border-[var(--border-default)]"
+            style={{ backgroundColor: 'rgba(0,0,0,0.25)', borderColor: 'var(--border-subtle)' }}
+          >
+            <div className="text-[9px] uppercase tracking-wider text-[#71717a] font-medium mb-1">
               Compra
             </div>
-            <div className="text-sm font-bold font-mono text-[#F0F6FC]">
+            <div className="text-base font-bold font-mono text-[#f4f4f5] tracking-tight">
               ${buy.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
             </div>
           </div>
           
           {/* Sell */}
-          <div className="bg-[#0D1117]/50 rounded-lg p-2 border border-[#30363D]/50">
-            <div className="text-[8px] uppercase tracking-wider text-[#6E7681] mb-0.5">
+          <div 
+            className="rounded-xl p-3 border transition-colors duration-200 group-hover:border-[var(--border-default)]"
+            style={{ backgroundColor: 'rgba(0,0,0,0.25)', borderColor: 'var(--border-subtle)' }}
+          >
+            <div className="text-[9px] uppercase tracking-wider text-[#71717a] font-medium mb-1">
               Venta
             </div>
             <div 
-              className="text-sm font-bold font-mono"
+              className="text-base font-bold font-mono tracking-tight"
               style={{ color: styles.accent }}
             >
               ${sell.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
@@ -88,9 +102,9 @@ export function RateCard({ title, buy, sell, variation = 0, icon = '💵', varia
           </div>
         </div>
 
-        {/* Arrow indicator */}
-        <div className="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ArrowRight className="w-4 h-4 text-[#6366F1]" />
+        {/* Arrow indicator - Smooth fade */}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-[-4px]">
+          <ArrowRight className="w-4 h-4" style={{ color: styles.accent }} />
         </div>
       </div>
     </Card>

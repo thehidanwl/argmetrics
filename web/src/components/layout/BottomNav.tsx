@@ -21,9 +21,9 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-[#30363D]/50">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-around items-center h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-[var(--border-default)]">
+      <div className="max-w-md mx-auto">
+        <div className="flex justify-around items-center h-16 px-1">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href;
             return (
@@ -31,24 +31,29 @@ export function BottomNav() {
                 key={tab.href}
                 href={tab.href}
                 className={`
-                  flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl
-                  transition-all duration-200 min-w-[64px]
+                  flex flex-col items-center justify-center gap-1 px-4 py-1.5 rounded-xl
+                  transition-all duration-300 min-w-[64px] relative
                   ${isActive 
-                    ? 'text-[#6366F1]' 
-                    : 'text-[#6E7681] hover:text-[#8B949E] hover:bg-[#21262D]/50'
+                    ? 'text-[#818cf8]' 
+                    : 'text-[#52525a] hover:text-[#a1a1aa] hover:bg-[var(--bg-tertiary)]/50'
                   }
                 `}
               >
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-8 h-1 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-full shadow-lg shadow-purple-500/50" />
+                )}
+                
                 <div className={`
-                  p-1.5 rounded-lg transition-all duration-200
+                  p-1.5 rounded-lg transition-all duration-300
                   ${isActive 
-                    ? 'bg-[#6366F1]/15 shadow-lg shadow-[#6366F1]/20' 
+                    ? 'bg-[var(--primary-500)]/15 shadow-lg shadow-purple-500/20' 
                     : ''
                   }
                 `}>
                   {tab.icon}
                 </div>
-                <span className={`text-[10px] font-medium ${isActive ? 'text-[#6366F1]' : ''}`}>
+                <span className={`text-[10px] font-medium ${isActive ? 'text-[#818cf8]' : ''}`}>
                   {tab.label}
                 </span>
               </Link>
@@ -57,7 +62,10 @@ export function BottomNav() {
         </div>
       </div>
       {/* Safe area padding for mobile */}
-      <div className="h-safe-area bg-[#0D1117]/80 backdrop-blur-xl" style={{ height: 'env(safe-area-inset-bottom)' }} />
+      <div 
+        className="bg-[var(--bg-primary)]/90" 
+        style={{ height: 'env(safe-area-inset-bottom)', minHeight: '6px' }} 
+      />
     </nav>
   );
 }

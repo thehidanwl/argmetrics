@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Menu, Bell, Search } from 'lucide-react';
+import { RefreshCw, Bell, Search, Menu } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -12,40 +12,47 @@ interface HeaderProps {
 export function Header({ title, subtitle, onRefresh, isRefreshing }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 glass">
-      <div className="max-w-2xl mx-auto px-3 py-3">
+      <div className="max-w-2xl mx-auto px-4 py-3.5">
         <div className="flex items-center justify-between">
           {/* Logo / Title */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#4F46E5] flex items-center justify-center shadow-lg shadow-[#6366F1]/30">
-              <span className="text-white font-bold text-lg">A</span>
+            <div className="relative">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] flex items-center justify-center shadow-lg shadow-purple-500/25">
+                <span className="text-white font-bold text-xl">A</span>
+              </div>
+              {/* Subtle glow */}
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 blur-lg -z-10" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#F0F6FC] tracking-tight">{title}</h1>
+              <h1 className="text-xl font-bold text-[#f4f4f5] tracking-tight">{title}</h1>
               {subtitle && (
-                <p className="text-xs text-[#8B949E]">{subtitle}</p>
+                <p className="text-xs text-[#71717a] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {subtitle}
+                </p>
               )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {onRefresh && (
               <button
                 onClick={onRefresh}
                 disabled={isRefreshing}
-                className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#21262D] border border-[#30363D] hover:border-[#6366F1] hover:bg-[#30363D] transition-all duration-200 group"
+                className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--primary-500)]/40 hover:bg-[var(--bg-card-hover)] transition-all duration-200 group"
                 aria-label="Actualizar"
               >
                 <RefreshCw 
-                  className={`w-5 h-5 text-[#8B949E] group-hover:text-[#6366F1] transition-colors ${isRefreshing ? 'animate-spin' : ''}`} 
+                  className={`w-4.5 h-4.5 text-[#a1a1aa] group-hover:text-[#f4f4f5] transition-colors ${isRefreshing ? 'animate-spin' : ''}`} 
                 />
               </button>
             )}
             <button
-              className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#21262D] border border-[#30363D] hover:border-[#6366F1] hover:bg-[#30363D] transition-all duration-200 group"
+              className="w-10 h-10 rounded-xl flex items-center justify-center bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] hover:border-[var(--primary-500)]/40 hover:bg-[var(--bg-card-hover)] transition-all duration-200 group"
               aria-label="Notificaciones"
             >
-              <Bell className="w-5 h-5 text-[#8B949E] group-hover:text-[#6366F1] transition-colors" />
+              <Bell className="w-4.5 h-4.5 text-[#a1a1aa] group-hover:text-[#f4f4f5] transition-colors" />
             </button>
           </div>
         </div>

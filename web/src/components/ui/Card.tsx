@@ -19,27 +19,28 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   }, ref) => {
     const baseStyles = `
       rounded-2xl
-      transition-all duration-200 ease-out
+      transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1)
     `;
 
     const variants = {
       default: `
-        bg-[#161B22]
-        border border-[#30363D]
+        bg-[var(--bg-card)]
+        border border-[var(--border-default)]
       `,
       elevated: `
-        bg-[#161B22]
-        shadow-xl shadow-black/30
-        border border-[#30363D]
+        bg-[var(--bg-card)]
+        shadow-[var(--shadow-lg)]
+        border border-[var(--border-default)]
       `,
       outlined: `
         bg-transparent
-        border-2 border-[#30363D]
-        hover:border-[#6366F1]
+        border-2 border-[var(--border-subtle)]
+        hover:border-[var(--primary-500)]/40
+        hover:bg-[var(--bg-card-hover)]
       `,
       gradient: `
-        bg-gradient-to-br from-[#161B22] to-[#21262D]
-        border border-[#30363D]
+        bg-gradient-to-br from-[var(--bg-card)] to-[var(--bg-tertiary)]
+        border border-[var(--border-default)]
       `,
     };
 
@@ -51,7 +52,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     };
 
     const hoverStyles = hover 
-      ? 'hover:shadow-xl hover:shadow-black/20 hover:border-[#6366F1]/50 hover:scale-[1.01] cursor-pointer' 
+      ? 'card-lift hover:shadow-[var(--shadow-xl)] hover:border-[var(--primary-500)]/30 cursor-pointer' 
       : '';
 
     return (

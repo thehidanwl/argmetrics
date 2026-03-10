@@ -19,11 +19,11 @@ interface KPICardProps {
 export function KPICard({ title, value, subtitle, trend, variant = 'default', icon }: KPICardProps) {
   const getVariantStyles = () => {
     switch (variant) {
-      case 'success': return { color: '#22C55E', bg: 'rgba(34, 197, 94, 0.1)', glow: 'shadow-[#22C55E]/5' };
-      case 'warning': return { color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)', glow: 'shadow-[#F59E0B]/5' };
-      case 'error': return { color: '#EF4444', bg: 'rgba(239, 68, 68, 0.1)', glow: 'shadow-[#EF4444]/5' };
-      case 'blue': return { color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)', glow: 'shadow-[#3B82F6]/5' };
-      default: return { color: '#F0F6FC', bg: 'rgba(99, 102, 241, 0.1)', glow: 'shadow-[#6366F1]/5' };
+      case 'success': return { color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', glowColor: 'rgba(16, 185, 129, 0.08)' };
+      case 'warning': return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', glowColor: 'rgba(245, 158, 11, 0.08)' };
+      case 'error': return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)', glowColor: 'rgba(239, 68, 68, 0.08)' };
+      case 'blue': return { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)', glowColor: 'rgba(59, 130, 246, 0.08)' };
+      default: return { color: '#f4f4f5', bg: 'rgba(99, 102, 241, 0.12)', glowColor: 'rgba(99, 102, 241, 0.08)' };
     }
   };
 
@@ -41,9 +41,9 @@ export function KPICard({ title, value, subtitle, trend, variant = 'default', ic
   const getTrendColor = () => {
     if (!trend) return '';
     switch (trend.direction) {
-      case 'up': return '#22C55E';
-      case 'down': return '#EF4444';
-      default: return '#8B949E';
+      case 'up': return '#10b981';
+      case 'down': return '#ef4444';
+      default: return '#a1a1aa';
     }
   };
 
@@ -52,22 +52,23 @@ export function KPICard({ title, value, subtitle, trend, variant = 'default', ic
       variant="gradient" 
       padding="sm" 
       hover 
-      className={`relative overflow-hidden ${variantStyles.glow}`}
+      className="relative overflow-hidden group"
+      style={{ boxShadow: '0 0 0 1px var(--border-subtle), inset 0 1px 0 0 var(--border-subtle)' }}
     >
-      {/* Background Accent */}
+      {/* Background Accent - Softer glow */}
       <div 
-        className="absolute top-0 right-0 w-12 h-12 rounded-full opacity-15 blur-xl"
-        style={{ backgroundColor: variantStyles.color }}
+        className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-3xl opacity-40 transition-opacity duration-300 group-hover:opacity-60"
+        style={{ background: `radial-gradient(circle, ${variantStyles.glowColor} 0%, transparent 70%)` }}
       />
       
       <div className="relative">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[9px] uppercase tracking-wider text-[#6E7681] font-semibold truncate">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] uppercase tracking-wider text-[#71717a] font-semibold truncate">
             {title}
           </span>
           {icon && (
             <div 
-              className="p-1 rounded-md"
+              className="p-1.5 rounded-lg"
               style={{ backgroundColor: variantStyles.bg, color: variantStyles.color }}
             >
               {icon}
@@ -76,7 +77,7 @@ export function KPICard({ title, value, subtitle, trend, variant = 'default', ic
         </div>
         
         <div 
-          className="text-lg font-bold font-mono"
+          className="text-xl font-bold font-mono tracking-tight"
           style={{ color: variantStyles.color }}
         >
           {typeof value === 'number' ? value.toLocaleString('es-AR') : value}
@@ -84,17 +85,17 @@ export function KPICard({ title, value, subtitle, trend, variant = 'default', ic
         
         {trend && (
           <div 
-            className="flex items-center gap-0.5 text-[9px] font-medium"
+            className="flex items-center gap-1 text-[10px] font-medium mt-1.5"
             style={{ color: getTrendColor() }}
           >
             {getTrendIcon()}
             {trend.value && <span>{trend.value}</span>}
-            {trend.label && <span className="text-[#6E7681] ml-0.5">{trend.label}</span>}
+            {trend.label && <span className="text-[#52525b] ml-0.5">{trend.label}</span>}
           </div>
         )}
         
         {subtitle && (
-          <div className="text-[8px] text-[#6E7681] mt-0.5">
+          <div className="text-[9px] text-[#52525b] mt-1">
             {subtitle}
           </div>
         )}

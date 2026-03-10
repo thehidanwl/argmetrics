@@ -19,7 +19,9 @@ import {
   AlertOctagon,
   Activity,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  RefreshCcw,
+  Zap
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -63,21 +65,21 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)]">
         <Header title="ArgMetrics" />
-        <div className="p-3 space-y-3 pb-24 max-w-2xl mx-auto">
-          {/* Compact Skeleton */}
-          <div className="grid grid-cols-2 gap-2">
+        <div className="p-4 space-y-4 pb-28 max-w-2xl mx-auto">
+          {/* Premium Skeleton */}
+          <div className="grid grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-[#161B22] rounded-xl h-20 border border-[#30363D]" />
+              <div key={i} className="skeleton rounded-2xl h-24 border border-[var(--border-subtle)]" />
             ))}
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-[#161B22] rounded-xl h-16 border border-[#30363D]" />
+              <div key={i} className="skeleton rounded-xl h-20 border border-[var(--border-subtle)]" />
             ))}
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div key={i} className="animate-pulse bg-[#161B22] rounded-xl h-24 border border-[#30363D]" />
+              <div key={i} className="skeleton rounded-2xl h-32 border border-[var(--border-subtle)]" />
             ))}
           </div>
         </div>
@@ -92,11 +94,11 @@ export default function Dashboard() {
         <Header title="ArgMetrics" />
         <div className="p-4 flex flex-col items-center justify-center min-h-[60vh]">
           <Card className="text-center p-8 max-w-sm w-full">
-            <div className="w-16 h-16 rounded-2xl bg-[#EF4444]/15 flex items-center justify-center mx-auto mb-4">
-              <AlertOctagon className="w-8 h-8 text-[#EF4444]" />
+            <div className="w-16 h-16 rounded-2xl bg-[var(--error-bg)] flex items-center justify-center mx-auto mb-4 border border-[var(--error-border)]">
+              <AlertOctagon className="w-8 h-8 text-[var(--error)]" />
             </div>
-            <h3 className="text-lg font-bold text-[#F0F6FC] mb-2">Algo salió mal</h3>
-            <p className="text-[#8B949E] text-sm mb-6">{error}</p>
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Algo salió mal</h3>
+            <p className="text-[var(--text-secondary)] text-sm mb-6">{error}</p>
             <Button onClick={handleRefresh} loading={refreshing} fullWidth>
               Reintentar
             </Button>
@@ -108,7 +110,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-24">
+    <div className="min-h-screen bg-[var(--bg-primary)] pb-28">
       <Header 
         title="ArgMetrics" 
         subtitle={health ? `Actualizado ${new Date(health.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}` : undefined}
@@ -116,124 +118,131 @@ export default function Dashboard() {
         isRefreshing={refreshing}
       />
 
-      <main className="p-3 space-y-3 max-w-2xl mx-auto">
+      <main className="p-4 space-y-5 max-w-2xl mx-auto">
         
-        {/* Header Stats - 2 columnas compactas */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Hero Stats - 2 columnas mejorado */}
+        <div className="grid grid-cols-2 gap-3">
           <KPICard
             title="Riesgo País"
             value={rates ? "1,785" : "—"}
             trend={{ direction: brechaDirection as 'up' | 'down', value: `${brecha.toFixed(1)}%`, label: 'brecha' }}
             variant="error"
-            icon={<AlertTriangle className="w-3 h-3" />}
+            icon={<AlertTriangle className="w-3.5 h-3.5" />}
           />
           <KPICard
             title="Tasa BCRA"
             value="38.0%"
             trend={{ direction: 'neutral', value: '0%', label: 'fija' }}
             variant="warning"
-            icon={<Activity className="w-3 h-3" />}
+            icon={<Activity className="w-3.5 h-3.5" />}
           />
         </div>
 
-        {/* Tipos de Cambio - Grid 2x2 compacto */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Tipos de Cambio - Grid 2x2 premium */}
+        <div className="grid grid-cols-2 gap-3">
           {/* Oficial */}
           <Card variant="gradient" padding="sm" className="relative overflow-hidden">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] uppercase tracking-wider text-[#8B949E] font-semibold">Oficial</span>
-              <span className="text-[9px] text-[#8B949E]">🏦</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase tracking-wider text-[#a1a1aa] font-semibold">Oficial</span>
+              <span className="text-xs">🏦</span>
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-lg font-bold font-mono text-[#F0F6FC]">
+                <div className="text-xl font-bold font-mono text-[#f4f4f5] tracking-tight">
                   ${rates?.oficial.sell.toLocaleString('es-AR')}
                 </div>
-                <div className="text-[8px] text-[#6E7681]">Venta</div>
+                <div className="text-[9px] text-[#71717a]">Venta</div>
               </div>
-              <Sparkline data={[1430, 1435, 1440, 1438, 1441]} color="#8B949E" width={40} height={20} />
+              <Sparkline data={[1430, 1435, 1440, 1438, 1441]} color="#a1a1aa" width={50} height={24} />
             </div>
           </Card>
 
           {/* Blue */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden bg-gradient-to-br from-[#161B22] to-[#22C55E]/5">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] uppercase tracking-wider text-[#22C55E] font-semibold">Blue</span>
-              <span className="text-[9px] text-[#22C55E]">💵</span>
+          <Card variant="gradient" padding="sm" className="relative overflow-hidden group">
+            {/* Glow effect */}
+            <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#10b981]/10 rounded-full blur-2xl group-hover:bg-[#10b981]/20 transition-all duration-500" />
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase tracking-wider text-[#10b981] font-semibold">Blue</span>
+              <span className="text-xs">💵</span>
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-lg font-bold font-mono text-[#22C55E]">
+                <div className="text-xl font-bold font-mono text-[#10b981] tracking-tight">
                   ${rates?.blue.sell.toLocaleString('es-AR')}
                 </div>
-                <div className="text-[8px] text-[#6E7681]">Venta</div>
+                <div className="text-[9px] text-[#71717a]">Venta</div>
               </div>
-              <Sparkline data={[1410, 1415, 1420, 1422, 1425]} color="#22C55E" width={40} height={20} />
+              <Sparkline data={[1410, 1415, 1420, 1422, 1425]} color="#10b981" width={50} height={24} />
             </div>
           </Card>
 
           {/* MEP */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] uppercase tracking-wider text-[#6366F1] font-semibold">MEP</span>
-              <span className="text-[9px] text-[#6366F1]">📊</span>
+          <Card variant="gradient" padding="sm" className="relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase tracking-wider text-[#818cf8] font-semibold">MEP</span>
+              <span className="text-xs">📊</span>
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-lg font-bold font-mono text-[#6366F1]">
+                <div className="text-xl font-bold font-mono text-[#818cf8] tracking-tight">
                   ${rates?.mep?.sell?.toLocaleString('es-AR') || '—'}
                 </div>
-                <div className="text-[8px] text-[#6E7681]">Venta</div>
+                <div className="text-[9px] text-[#71717a]">Venta</div>
               </div>
-              <Sparkline data={[1375, 1380, 1388, 1392, 1395]} color="#6366F1" width={40} height={20} />
+              <Sparkline data={[1375, 1380, 1388, 1392, 1395]} color="#818cf8" width={50} height={24} />
             </div>
           </Card>
 
           {/* CCL */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] uppercase tracking-wider text-[#F59E0B] font-semibold">CCL</span>
-              <span className="text-[9px] text-[#F59E0B]">💹</span>
+          <Card variant="gradient" padding="sm" className="relative overflow-hidden group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase tracking-wider text-[#f59e0b] font-semibold">CCL</span>
+              <span className="text-xs">💹</span>
             </div>
             <div className="flex items-end justify-between">
               <div>
-                <div className="text-lg font-bold font-mono text-[#F59E0B]">
+                <div className="text-xl font-bold font-mono text-[#f59e0b] tracking-tight">
                   ${rates?.ccl?.sell?.toLocaleString('es-AR') || '—'}
                 </div>
-                <div className="text-[8px] text-[#6E7681]">Venta</div>
+                <div className="text-[9px] text-[#71717a]">Venta</div>
               </div>
-              <Sparkline data={[1395, 1400, 1405, 1410, 1412]} color="#F59E0B" width={40} height={20} />
+              <Sparkline data={[1395, 1400, 1405, 1410, 1412]} color="#f59e0b" width={50} height={24} />
             </div>
           </Card>
         </div>
 
-        {/* Brecha cambiaria - mini card */}
-        <div className="flex items-center justify-between px-2 py-2 bg-[#21262D] rounded-xl border border-[#30363D]">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#8B949E]" />
-            <span className="text-xs text-[#8B949E]">Brecha Oficial vs Blue</span>
+        {/* Brecha cambiaria - Premium card */}
+        <Card variant="gradient" padding="sm" className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[var(--warning-bg)] flex items-center justify-center border border-[var(--warning-border)]">
+              <TrendingUp className="w-5 h-5 text-[var(--warning)]" />
+            </div>
+            <div>
+              <div className="text-xs text-[var(--text-secondary)]">Brecha Oficial vs Blue</div>
+              <div className="text-[10px] text-[var(--text-muted)]">Variación semanal</div>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {brechaDirection === 'down' ? (
-              <ArrowDownRight className="w-3 h-3 text-[#22C55E]" />
+              <ArrowDownRight className="w-5 h-5 text-[var(--success)]" />
             ) : (
-              <ArrowUpRight className="w-3 h-3 text-[#EF4444]" />
+              <ArrowUpRight className="w-5 h-5 text-[var(--error)]" />
             )}
-            <span className={`text-sm font-bold font-mono ${brechaDirection === 'down' ? 'text-[#22C55E]' : 'text-[#EF4444]'}`}>
-              {brecha.toFixed(2)}%
+            <span className={`text-xl font-bold font-mono ${brechaDirection === 'down' ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
+              {brecha.toFixed(1)}%
             </span>
           </div>
-        </div>
+        </Card>
 
         {/* Tasas de Cambio Detalladas */}
         <section>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-[#F0F6FC]">Detalle de Tasas</h2>
-            <button className="text-xs text-[#6366F1] hover:text-[#818CF8] flex items-center gap-0.5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Detalle de Tasas</h2>
+            <button className="text-xs text-[var(--primary-400)] hover:text-[var(--primary-300)] flex items-center gap-0.5 transition-colors">
               Ver más <ChevronRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <RateCard
               title="Dólar Oficial"
               buy={rates?.oficial.buy || 0}
@@ -271,27 +280,27 @@ export default function Dashboard() {
 
         {/* Explorar - Grid 2 columnas */}
         <section>
-          <h2 className="text-sm font-bold text-[#F0F6FC] mb-2">Explorar</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Explorar</h2>
+          <div className="grid grid-cols-2 gap-3">
             <Card variant="outlined" padding="sm" hover className="group">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#6366F1]/15 flex items-center justify-center">
-                  <Activity className="w-4 h-4 text-[#6366F1]" />
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-[var(--primary-500)]/10 flex items-center justify-center border border-[var(--primary-500)]/20 group-hover:border-[var(--primary-500)]/40 transition-colors">
+                  <Activity className="w-5 h-5 text-[var(--primary-400)]" />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-[#F0F6FC]">Economía</div>
-                  <div className="text-[9px] text-[#6E7681]">12 indicadores</div>
+                  <div className="text-xs font-semibold text-[var(--text-primary)]">Economía</div>
+                  <div className="text-[10px] text-[var(--text-muted)]">12 indicadores</div>
                 </div>
               </div>
             </Card>
             <Card variant="outlined" padding="sm" hover className="group">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-[#22C55E]/15 flex items-center justify-center">
-                  <Globe className="w-4 h-4 text-[#22C55E]" />
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-[var(--success-bg)] flex items-center justify-center border border-[var(--success-border)] group-hover:border-[var(--success)]/40 transition-colors">
+                  <Globe className="w-5 h-5 text-[var(--success)]" />
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-[#F0F6FC]">Social</div>
-                  <div className="text-[9px] text-[#6E7681]">5 indicadores</div>
+                  <div className="text-xs font-semibold text-[var(--text-primary)]">Social</div>
+                  <div className="text-[10px] text-[var(--text-muted)]">5 indicadores</div>
                 </div>
               </div>
             </Card>
@@ -299,8 +308,9 @@ export default function Dashboard() {
         </section>
 
         {/* Disclaimer */}
-        <div className="text-center py-2">
-          <p className="text-[9px] text-[#6E7681]">
+        <div className="text-center py-4">
+          <p className="text-[10px] text-[var(--text-muted)] flex items-center justify-center gap-1">
+            <Zap className="w-3 h-3" />
             Datos de referencia. No constituyen asesoramiento financiero.
           </p>
         </div>
