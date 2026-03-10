@@ -1,12 +1,46 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { prisma } from '../config/database';
 
+/**
+ * @swagger
+ * /v1/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Returns the health status of the API and database connection
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: API is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: healthy
+ *                 version:
+ *                   type: string
+ *                   example: 1.0.0
+ *                 uptime:
+ *                   type: number
+ *                   example: 3600
+ *                 database:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                       example: connected
+ *                     latencyMs:
+ *                       type: number
+ *                       example: 5
+ */
 const router = Router();
 
 let startTime = Date.now();
 
 // GET /v1/health - Health check with ingestion status
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const startDb = Date.now();
     await prisma.$queryRaw`SELECT 1`;

@@ -46,3 +46,4 @@ expo-cli.log
 *.tgz
 .cache/
 .vercel
+.env*.local

@@ -1,6 +1,31 @@
 import { Router } from 'express';
 import { prisma, parseJsonField } from '../config/database';
 
+/**
+ * @swagger
+ * /v1/live/usd:
+ *   get:
+ *     summary: Get current USD exchange rates
+ *     description: Returns real-time USD exchange rates from multiple sources (official, blue, MEP, CCL)
+ *     tags: [Live Data]
+ *     responses:
+ *       200:
+ *         description: Current USD rates
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     oficial:
+ *                       type: object
+ *                     blue:
+ *                       type: object
+ *       500:
+ *         description: Error fetching rates
+ */
 const router = Router();
 
 // Cache TTL constants (in minutes)
@@ -29,28 +54,19 @@ router.get('/usd', async (req, res) => {
     // This would normally call BCRA and Bluelytics APIs
     // For now, return mock data structure
     const mockData = {
-      official: { buy: 820, sell: 860, updatedAt: new Date().toISOString() },
-      blue: { buy: 1000, sell: 1020, updatedAt: new Date().toISOString() },
-      mep: { buy: 980, sell: 995, updatedAt: new Date().toISOString() },
-      ccl: { buy: 1005, sell: 1020, updatedAt: new Date().toISOString() },
-      brecha: { value: 18.6, unit: 'percentage' },
+      oficial: { buy: 1390, sell: 1441, updatedAt: new Date().toISOString() },
+      blue: { buy: 1405, sell: 1425, updatedAt: new Date().toISOString() },
+      oficial_euro: { buy: 1511, sell: 1566, updatedAt: new Date().toISOString() },
+      blue_euro: { buy: 1527, sell: 1549, updatedAt: new Date().toISOString() },
+      brecha: { value: -1.11, unit: 'percentage' },
     };
 
     // Save to cache (store JSON as string for SQLite)
     const expiresAt = new Date(Date.now() + USD_CACHE_TTL * 60 * 1000);
     await prisma.liveCache.upsert({
       where: { key: 'usd_rates' },
-      update: {
-        value: JSON.stringify(mockData),
-        fetchedAt: new Date(),
-        expiresAt,
-      },
-      create: {
-        key: 'usd_rates',
-        value: JSON.stringify(mockData),
-        fetchedAt: new Date(),
-        expiresAt,
-      },
+      update: { value: JSON.stringify(mockData), expiresAt },
+      create: { key: 'usd_rates', value: JSON.stringify(mockData), expiresAt },
     });
 
     res.json({
@@ -60,33 +76,54 @@ router.get('/usd', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching USD rates:', error);
-    
+
     // Try to return last cached value on error
     const cache = await prisma.liveCache.findUnique({
       where: { key: 'usd_rates' },
     });
-    
+
     if (cache) {
       const value = parseJsonField<Record<string, unknown>>(cache.value, {});
       res.json({
         data: value,
         cached: true,
-        expiresAt: cache.expiresAt.toISOString(),
-        error: 'Using cached data due to API error',
+        error: 'Using stale cache due to API error',
       });
       return;
     }
 
-    res.status(503).json({
+    res.status(500).json({
       error: {
-        code: 'SERVICE_UNAVAILABLE',
-        message: 'Unable to fetch USD rates',
+        code: 'USD_RATES_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch USD rates',
       },
     });
   }
 });
 
-// GET /v1/live/country-risk - Get country risk (cached)
+/**
+ * @swagger
+ * /v1/live/country-risk:
+ *   get:
+ *     summary: Get country risk index
+ *     description: Returns the current Argentina country risk (EMBI)
+ *     tags: [Live Data]
+ *     responses:
+ *       200:
+ *         description: Current country risk
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     value:
+ *                       type: number
+ *                     updatedAt:
+ *                       type: string
+ */
 router.get('/country-risk', async (req, res) => {
   try {
     const cache = await prisma.liveCache.findUnique({
@@ -104,12 +141,11 @@ router.get('/country-risk', async (req, res) => {
       return;
     }
 
-    // Cache expired or missing
+    // Cache expired or missing - fetch from external APIs
+    // This would normally call BCRA API
     const mockData = {
-      value: 1850,
-      unit: 'basis_points',
-      variation: -15,
-      variationType: 'daily',
+      value: 1800,
+      variation: -2.5,
       updatedAt: new Date().toISOString(),
     };
 
@@ -117,17 +153,8 @@ router.get('/country-risk', async (req, res) => {
     const expiresAt = new Date(Date.now() + RISK_CACHE_TTL * 60 * 1000);
     await prisma.liveCache.upsert({
       where: { key: 'country_risk' },
-      update: {
-        value: JSON.stringify(mockData),
-        fetchedAt: new Date(),
-        expiresAt,
-      },
-      create: {
-        key: 'country_risk',
-        value: JSON.stringify(mockData),
-        fetchedAt: new Date(),
-        expiresAt,
-      },
+      update: { value: JSON.stringify(mockData), expiresAt },
+      create: { key: 'country_risk', value: JSON.stringify(mockData), expiresAt },
     });
 
     res.json({
@@ -137,26 +164,26 @@ router.get('/country-risk', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching country risk:', error);
-    
+
+    // Try to return last cached value on error
     const cache = await prisma.liveCache.findUnique({
       where: { key: 'country_risk' },
     });
-    
+
     if (cache) {
       const value = parseJsonField<Record<string, unknown>>(cache.value, {});
       res.json({
         data: value,
         cached: true,
-        expiresAt: cache.expiresAt.toISOString(),
-        error: 'Using cached data due to API error',
+        error: 'Using stale cache due to API error',
       });
       return;
     }
 
-    res.status(503).json({
+    res.status(500).json({
       error: {
-        code: 'SERVICE_UNAVAILABLE',
-        message: 'Unable to fetch country risk',
+        code: 'COUNTRY_RISK_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to fetch country risk',
       },
     });
   }

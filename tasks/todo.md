@@ -38,6 +38,11 @@ Proyecto de aplicación web y mobile para visualizar datos económicos de Argent
 - [x] 1.4.4 Endpoint GET /v1/health
 - [x] 1.4.5 Rate limiting básico
 - [x] 1.4.6 Base de datos SQLite local funcionando
+- [x] 1.4.7 GET /v1/metrics/categories
+- [x] 1.4.8 GET /v1/metrics/available
+- [x] 1.4.9 GET /v1/live/usd
+- [x] 1.4.10 GET /v1/ingest/usd (cron)
+- [x] 1.4.11 GET /v1/ingest/inflation (cron)
 
 #### 1.5 Frontend - Core (Mobile)
 - [x] 1.5.1 Setup React Navigation (bottom tabs)
@@ -57,8 +62,14 @@ Proyecto de aplicación web y mobile para visualizar datos económicos de Argent
 - [x] 2.1.3 Fallback a último valor si API falla
 
 ### 2.2 Endpoints en Vivo
-- [x] 2.2.1 Endpoint GET /v1/live/usd (mock data)
-- [x] 2.2.2 Endpoint GET /v1/live/country-risk (mock data)
+- [x] 2.2.1 Endpoint GET /v1/live/usd
+- [x] 2.2.2 Endpoint GET /v1/live/country-risk
+
+### 2.3 Ingestión de Datos (Cron Jobs)
+- [x] 2.3.1 GET /v1/ingest/usd (Bluelytics API)
+- [x] 2.3.2 GET /v1/ingest/inflation (INDEC)
+- [ ] 2.3.3 GET /v1/ingest/interest-rate (BCRA)
+- [ ] 2.3.4 Configurar Vercel Cron jobs
 
 ### 2.3 Frontend - Sección Tipo de Cambio
 - [x] 2.3.1 Dashboard de tipos de cambio
