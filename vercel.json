@@ -1,9 +1,9 @@
 {
   "buildCommand": "cd web && npm install && npm run build",
   "installCommand": "cd web && npm install",
-  "outputDirectory": "web/.next",
+  "outputDirectory": "web/out",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/backend/api" }
+    { "source": "/api/(.*)", "destination": "/api" }
   ],
   "crons": [
     {
