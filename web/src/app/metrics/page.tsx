@@ -117,9 +117,9 @@ export default function MetricsPage() {
         isRefreshing={refreshing}
       />
 
-      <main className="p-4 space-y-6">
+      <main className="p-6 space-y-6 pb-24">
         {/* Metric Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        <div className="flex gap-3 overflow-x-auto pb-2 px-1">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -153,35 +153,35 @@ export default function MetricsPage() {
           ))}
         </div>
 
-        {/* Current Value Card */}
-        <Card className="text-center py-6">
-          <div className="text-[var(--text-secondary)] text-sm mb-1">Valor Actual</div>
-          <div className="text-5xl font-bold font-mono text-[var(--text-primary)] mb-2">
+        {/* Current Value Card - Enhanced */}
+        <Card className="text-center py-8 px-6">
+          <div className="text-[var(--text-secondary)] text-base mb-2">Valor Actual</div>
+          <div className="text-5xl font-bold font-mono text-[var(--text-primary)] mb-3">
             {selectedTab === 'Inflación' ? '4.6%' : selectedTab === 'Riesgo' ? '1,850' : '42.5%'}
           </div>
-          <div className="text-[var(--text-secondary)] text-sm">Enero 2026</div>
-          <div className="flex items-center justify-center gap-1 mt-2 text-[var(--success)]">
-            <TrendingUp className="w-4 h-4" />
-            <span>+2.1% vs mes anterior</span>
+          <div className="text-[var(--text-secondary)] text-sm mb-4">Enero 2026</div>
+          <div className="flex items-center justify-center gap-2 text-[var(--success)] bg-[var(--success-bg)] px-4 py-2 rounded-full w-fit mx-auto">
+            <TrendingUp className="w-5 h-5" />
+            <span className="font-medium">+2.1% vs mes anterior</span>
           </div>
         </Card>
 
-        {/* Metrics List */}
+        {/* Metrics List - Better spacing */}
         <section>
-          <h2 className="text-lg font-semibold mb-3">Métricas Disponibles</h2>
-          <div className="space-y-2">
+          <h2 className="text-lg font-semibold mb-4 text-[var(--text-primary)]">Métricas Disponibles</h2>
+          <div className="space-y-3">
             {filteredMetrics.slice(0, 10).map((metric) => (
-              <Card key={metric.id} className="flex justify-between items-center py-3">
+              <Card key={metric.id} className="flex justify-between items-center py-4 px-5">
                 <div>
-                  <div className="font-medium text-[var(--text-primary)]">
+                  <div className="font-medium text-[var(--text-primary)] text-base">
                     {metric.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </div>
-                  <div className="text-xs text-[var(--text-muted)]">
+                  <div className="text-xs text-[var(--text-muted)] mt-1">
                     {metric.source} • {new Date(metric.date).toLocaleDateString('es-AR')}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-mono font-semibold text-[var(--text-primary)]">
+                <div className="text-right pl-4">
+                  <div className="font-mono font-bold text-lg text-[var(--text-primary)]">
                     {formatValue(metric.value, metric.name)}
                   </div>
                 </div>

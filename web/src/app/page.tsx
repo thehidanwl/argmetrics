@@ -65,11 +65,11 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)]">
         <Header title="ArgMetrics" />
-        <div className="p-4 space-y-4 pb-28 max-w-2xl mx-auto">
+        <div className="p-6 space-y-6 pb-28 max-w-2xl mx-auto">
           {/* Premium Skeleton */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="skeleton rounded-2xl h-24 border border-[var(--border-subtle)]" />
+              <div key={i} className="skeleton rounded-2xl h-28 border border-[var(--border-subtle)]" />
             ))}
           </div>
           <div className="grid grid-cols-4 gap-3">
@@ -118,10 +118,10 @@ export default function Dashboard() {
         isRefreshing={refreshing}
       />
 
-      <main className="p-4 space-y-5 max-w-2xl mx-auto">
+      <main className="p-6 space-y-6 max-w-2xl mx-auto">
         
         {/* Hero Stats - 2 columnas mejorado */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <KPICard
             title="Riesgo País"
             value={rates ? "1,785" : "—"}
@@ -139,9 +139,9 @@ export default function Dashboard() {
         </div>
 
         {/* Tipos de Cambio - Grid 2x2 premium */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {/* Oficial */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden">
+          <Card variant="gradient" padding="md" className="relative overflow-hidden">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-wider text-[#a1a1aa] font-semibold">Oficial</span>
               <span className="text-xs">🏦</span>
@@ -158,7 +158,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Blue */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden group">
+          <Card variant="gradient" padding="md" className="relative overflow-hidden group">
             {/* Glow effect */}
             <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#10b981]/10 rounded-full blur-2xl group-hover:bg-[#10b981]/20 transition-all duration-500" />
             <div className="flex items-center justify-between mb-2">
@@ -177,7 +177,7 @@ export default function Dashboard() {
           </Card>
 
           {/* MEP */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden group">
+          <Card variant="gradient" padding="md" className="relative overflow-hidden group">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-wider text-[#818cf8] font-semibold">MEP</span>
               <span className="text-xs">📊</span>
@@ -194,7 +194,7 @@ export default function Dashboard() {
           </Card>
 
           {/* CCL */}
-          <Card variant="gradient" padding="sm" className="relative overflow-hidden group">
+          <Card variant="gradient" padding="md" className="relative overflow-hidden group">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-wider text-[#f59e0b] font-semibold">CCL</span>
               <span className="text-xs">💹</span>
@@ -212,7 +212,7 @@ export default function Dashboard() {
         </div>
 
         {/* Brecha cambiaria - Premium card */}
-        <Card variant="gradient" padding="sm" className="flex items-center justify-between">
+        <Card variant="gradient" padding="md" className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[var(--warning-bg)] flex items-center justify-center border border-[var(--warning-border)]">
               <TrendingUp className="w-5 h-5 text-[var(--warning)]" />
@@ -242,7 +242,7 @@ export default function Dashboard() {
               Ver más <ChevronRight className="w-3 h-3" />
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <RateCard
               title="Dólar Oficial"
               buy={rates?.oficial.buy || 0}
@@ -281,7 +281,7 @@ export default function Dashboard() {
         {/* Explorar - Grid 2 columnas */}
         <section>
           <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Explorar</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Card variant="outlined" padding="sm" hover className="group">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-[var(--primary-500)]/10 flex items-center justify-center border border-[var(--primary-500)]/20 group-hover:border-[var(--primary-500)]/40 transition-colors">

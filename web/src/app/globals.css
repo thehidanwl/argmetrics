@@ -16,12 +16,12 @@
   --primary-800: #3730A3;
   --primary-900: #312E81;
 
-  /* Backgrounds - Deep Dark */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-tertiary: #1a1a25;
-  --bg-card: #14141d;
-  --bg-card-hover: #1a1a27;
+  /* Backgrounds - More visible (lighter dark, not pitch black) */
+  --bg-primary: #1c1c26;
+  --bg-secondary: #262630;
+  --bg-tertiary: #2e2e3a;
+  --bg-card: #23232f;
+  --bg-card-hover: #2a2a38;
 
   /* Text */
   --text-primary: #f4f4f5;
@@ -42,9 +42,9 @@
   --info-bg: rgba(59, 130, 246, 0.12);
   --info-border: rgba(59, 130, 246, 0.25);
 
-  /* Borders */
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.04);
+  /* Borders - More visible */
+  --border-default: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.08);
   --border-focus: var(--primary-500);
 
   /* Special - Financial Colors */
