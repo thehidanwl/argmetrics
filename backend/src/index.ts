@@ -1,35 +1,105 @@
 import express from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import metricsRouter from './routes/metrics.js';
 import liveRouter from './routes/live.js';
 import healthRouter from './routes/health.js';
-
-dotenv.config();
+import ingestRouter from './routes/ingest.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// Security middleware
 app.use(helmet());
-app.use(cors());
-app.use(express.json());
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - general
+const generalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 100, // 100 requests per minute
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: { code: 'RATE_LIMITED', message: 'Too many requests' } }
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests, please try again later'
+    }
+  }
 });
 
-app.use(limiter);
+// Rate limiting - ingest endpoint ( stricter)
+const ingestLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many requests to ingest endpoint, please try again later'
+    }
+  }
+});
 
-// Routes
+// Apply general rate limit
+app.use(generalLimiter);
+
+// Swagger configuration
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'ArgMetrics API',
+      version: '1.0.0',
+      description: 'API for Argentine economic metrics - inflation, USD rates, country risk, and more',
+      contact: {
+        name: 'API Support',
+        email: 'support@argmetrics.com'
+      }
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Development server'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    security: [{
+      BearerAuth: []
+    }]
+  },
+  apis: ['./src/routes/*.ts', './src/controllers/*.ts']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// Middleware
+app.use(express.json());
+
+// Swagger UI endpoint
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'ArgMetrics API Docs',
+  customfavIcon: '/favicon.ico'
+}));
+
+// JSON spec endpoint
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+
+// Routes - ingest has stricter rate limit
+app.use('/v1/ingest', ingestLimiter, ingestRouter);
 app.use('/v1/metrics', metricsRouter);
 app.use('/v1/live', liveRouter);
 app.use('/v1/health', healthRouter);
@@ -55,8 +125,12 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 ArgMetrics API running on port ${PORT}`);
-});
+// Only start server if not in test mode
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 ArgMetrics API running on port ${PORT}`);
+    console.log(`📚 API Docs available at http://localhost:${PORT}/api-docs`);
+  });
+}
 
 export default app;
