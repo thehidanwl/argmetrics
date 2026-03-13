@@ -26,7 +26,6 @@ const CATEGORY_LABELS: Record<TabCategory, string> = {
   consumption: 'Consumo',
 };
 
-// Returns icon and color config for a given metric name
 function getMetricMeta(name: string): { icon: React.ReactNode; color: string; label: string } {
   if (name.includes('inflation')) {
     return { icon: <Percent className="w-4 h-4" />, color: '#f59e0b', label: 'Inflación (IPC)' };
@@ -86,6 +85,30 @@ function formatPeriod(periodType: string): string {
   return labels[periodType] ?? periodType;
 }
 
+// Returns semantic color for a metric value (danger/warning/ok)
+function getValueSeverity(value: number, name: string): 'red' | 'yellow' | 'green' | 'neutral' {
+  if (name.includes('country_risk')) {
+    return value > 1500 ? 'red' : value > 800 ? 'yellow' : 'green';
+  }
+  if (name.includes('inflation')) {
+    return value > 5 ? 'red' : value > 3 ? 'yellow' : 'green';
+  }
+  if (name.includes('poverty')) {
+    return value > 35 ? 'red' : value > 25 ? 'yellow' : 'green';
+  }
+  if (name.includes('unemployment')) {
+    return value > 10 ? 'red' : value > 7 ? 'yellow' : 'green';
+  }
+  return 'neutral';
+}
+
+const severityStyles = {
+  red: { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)', text: '#ef4444' },
+  yellow: { bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', text: '#f59e0b' },
+  green: { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', text: '#10b981' },
+  neutral: { bg: 'rgba(99,102,241,0.10)', border: 'rgba(99,102,241,0.20)', text: '#818cf8' },
+};
+
 export default function MetricsPage() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [categories, setCategories] = useState<MetricCategory[]>([]);
@@ -128,7 +151,7 @@ export default function MetricsPage() {
       <div className="min-h-screen bg-[var(--bg-primary)]">
         <Header title="Indicadores" />
         <div className="p-5 space-y-4 pb-28">
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 p-1 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)]">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="skeleton rounded-xl h-9 flex-1" />
             ))}
@@ -166,16 +189,17 @@ export default function MetricsPage() {
       <Header title="Indicadores" onRefresh={handleRefresh} isRefreshing={refreshing} />
 
       <main className="p-5 space-y-5 max-w-2xl mx-auto">
-        {/* Category Filter */}
-        <div className="flex gap-2">
+
+        {/* Category Filter - pill tabs style */}
+        <div className="flex gap-1.5 p-1 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)]">
           {(['all', 'economy', 'social', 'consumption'] as TabCategory[]).map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
                 selectedCategory === cat
-                  ? 'bg-[var(--primary-600)] text-white shadow-lg shadow-purple-500/20'
-                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-default)] hover:border-[var(--primary-500)]/40 hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--primary-600)] text-white shadow-lg shadow-purple-500/30'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               {CATEGORY_LABELS[cat]}
@@ -190,7 +214,7 @@ export default function MetricsPage() {
               .filter(c => selectedCategory === 'all' || c.name === selectedCategory)
               .map(cat => (
                 <Card key={cat.name} variant="gradient" padding="sm" className="flex-1 text-center">
-                  <div className="text-lg font-bold font-mono text-[var(--text-primary)]">
+                  <div className="text-xl font-bold font-mono text-[var(--text-primary)]">
                     {cat.metricsCount}
                   </div>
                   <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
@@ -203,7 +227,14 @@ export default function MetricsPage() {
 
         {/* Metrics List */}
         <section>
-          <div className="space-y-2.5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-0.5 h-4 rounded-full bg-[var(--primary-500)]" />
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              {filteredMetrics.length} métricas
+            </h2>
+          </div>
+
+          <div className="space-y-2">
             {filteredMetrics.length === 0 ? (
               <Card padding="lg" className="text-center">
                 <BarChart3 className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-3" />
@@ -213,22 +244,24 @@ export default function MetricsPage() {
               filteredMetrics.map(metric => {
                 const meta = getMetricMeta(metric.name);
                 const value = formatMetricValue(metric.value, metric.name);
-                const isPositive = metric.value >= 0;
+                const severity = getValueSeverity(metric.value, metric.name);
+                const sev = severityStyles[severity];
                 const showTrend = metric.name.includes('gdp') || metric.name.includes('retail');
+                const isPositive = metric.value >= 0;
 
                 return (
                   <Card
                     key={metric.id ?? metric.name}
                     variant="gradient"
                     padding="md"
-                    className="flex items-center gap-4"
+                    className="flex items-center gap-4 group hover:border-[var(--primary-500)]/20 transition-colors"
                   >
                     {/* Icon */}
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 border transition-colors"
                       style={{
-                        backgroundColor: `${meta.color}15`,
-                        borderColor: `${meta.color}30`,
+                        backgroundColor: `${meta.color}12`,
+                        borderColor: `${meta.color}25`,
                         color: meta.color,
                       }}
                     >
@@ -240,29 +273,48 @@ export default function MetricsPage() {
                       <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
                         {meta.label}
                       </div>
-                      <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                        {metric.source} · {formatPeriod(metric.periodType)} ·{' '}
-                        {new Date(metric.date).toLocaleDateString('es-AR', {
-                          month: 'short',
-                          year: 'numeric',
-                        })}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span
+                          className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
+                        >
+                          {metric.source}
+                        </span>
+                        <span className="text-[9px] text-[var(--text-muted)]">·</span>
+                        <span className="text-[9px] text-[var(--text-muted)]">
+                          {formatPeriod(metric.periodType)}
+                        </span>
+                        <span className="text-[9px] text-[var(--text-muted)]">·</span>
+                        <span className="text-[9px] text-[var(--text-muted)]">
+                          {new Date(metric.date).toLocaleDateString('es-AR', {
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Value */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {showTrend &&
-                        (isPositive ? (
-                          <TrendingUp className="w-3.5 h-3.5 text-[var(--success)]" />
-                        ) : (
-                          <TrendingDown className="w-3.5 h-3.5 text-[var(--error)]" />
-                        ))}
-                      <span
-                        className="text-base font-bold font-mono"
-                        style={{ color: meta.color }}
+                    {/* Value with severity badge */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {showTrend && (
+                        isPositive
+                          ? <TrendingUp className="w-3.5 h-3.5 text-[var(--success)]" />
+                          : <TrendingDown className="w-3.5 h-3.5 text-[var(--error)]" />
+                      )}
+                      <div
+                        className="px-2.5 py-1.5 rounded-xl border"
+                        style={{
+                          backgroundColor: sev.bg,
+                          borderColor: sev.border,
+                        }}
                       >
-                        {value}
-                      </span>
+                        <span
+                          className="text-sm font-bold font-mono"
+                          style={{ color: severity === 'neutral' ? meta.color : sev.text }}
+                        >
+                          {value}
+                        </span>
+                      </div>
                     </div>
                   </Card>
                 );
@@ -272,7 +324,7 @@ export default function MetricsPage() {
         </section>
 
         <div className="text-center text-[10px] text-[var(--text-muted)] py-2">
-          Fuentes: INDEC, BCRA, JPMorgan
+          Fuentes: INDEC · BCRA · JPMorgan
         </div>
       </main>
 

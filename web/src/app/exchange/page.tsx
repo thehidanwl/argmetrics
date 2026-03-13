@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,7 +29,6 @@ const PERIOD_LABELS: Record<Period, string> = {
 };
 
 // Generates deterministic historical chart data for multiple exchange rate types.
-// Uses sine wave oscillations + linear trend to simulate realistic price movement.
 function generateChartData(
   oficialSell: number,
   blueSell: number,
@@ -128,7 +127,7 @@ export default function ExchangePage() {
         <Header title="Tipo de Cambio" />
         <div className="p-5 space-y-4 pb-28">
           <div className="skeleton rounded-2xl h-10" />
-          <div className="skeleton rounded-2xl h-52" />
+          <div className="skeleton rounded-2xl h-60" />
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="skeleton rounded-2xl h-24" />
           ))}
@@ -167,16 +166,17 @@ export default function ExchangePage() {
       />
 
       <main className="p-5 space-y-5 max-w-2xl mx-auto">
+
         {/* Period Selector */}
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 p-1 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)]">
           {periods.map(period => (
             <button
               key={period}
               onClick={() => setSelectedPeriod(period)}
-              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
                 selectedPeriod === period
-                  ? 'bg-[var(--primary-600)] text-white shadow-lg shadow-purple-500/20'
-                  : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-default)] hover:border-[var(--primary-500)]/40 hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--primary-600)] text-white shadow-lg shadow-purple-500/30'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               {period}
@@ -186,31 +186,51 @@ export default function ExchangePage() {
 
         {/* Chart */}
         <Card variant="gradient" padding="md">
+          {/* Chart header */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-              {PERIOD_LABELS[selectedPeriod]}
-            </h3>
-            <div className="flex items-center gap-3 text-[10px] text-[var(--text-muted)]">
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-0.5 bg-[#a1a1aa] inline-block rounded-full" />
+            <div>
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                Evolución · {PERIOD_LABELS[selectedPeriod]}
+              </h3>
+              <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Valores de venta en pesos</p>
+            </div>
+            <div className="flex items-center gap-3 text-[10px]">
+              <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#a1a1aa] opacity-60" />
                 Oficial
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-0.5 bg-[#10b981] inline-block rounded-full" />
+              <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#10b981] opacity-60" />
                 Blue
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-3 h-0.5 bg-[#818cf8] inline-block rounded-full" />
+              <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                <span className="w-2.5 h-2.5 rounded-sm bg-[#818cf8] opacity-60" />
                 MEP
               </span>
             </div>
           </div>
-          <div className="h-48">
+
+          {/* Area chart with gradient fills */}
+          <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+                <defs>
+                  <linearGradient id="gradOficial" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#a1a1aa" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#a1a1aa" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradMEP" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.05)"
+                  stroke="rgba(255,255,255,0.04)"
                   vertical={false}
                 />
                 <XAxis
@@ -230,51 +250,122 @@ export default function ExchangePage() {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-default)',
-                    borderRadius: '10px',
+                    backgroundColor: '#1c1c2e',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: '12px',
                     fontSize: '12px',
                     padding: '8px 12px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                   }}
-                  labelStyle={{ color: 'var(--text-secondary)', marginBottom: 4 }}
+                  labelStyle={{ color: '#a1a1aa', marginBottom: 6, fontWeight: 600 }}
                   formatter={(value: number, name: string) => [
                     `$${value.toLocaleString('es-AR')}`,
                     name,
                   ]}
-                  cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                  cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="Oficial"
                   stroke="#a1a1aa"
                   strokeWidth={1.5}
+                  fill="url(#gradOficial)"
                   dot={false}
                   isAnimationActive={false}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="Blue"
                   stroke="#10b981"
                   strokeWidth={2}
+                  fill="url(#gradBlue)"
                   dot={false}
                   isAnimationActive={false}
                 />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="MEP"
                   stroke="#818cf8"
                   strokeWidth={1.5}
+                  fill="url(#gradMEP)"
                   dot={false}
                   isAnimationActive={false}
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Current values summary */}
+          {chartData.length > 0 && (
+            <div className="flex gap-3 mt-4 pt-4 border-t border-[var(--border-subtle)]">
+              {[
+                { label: 'Oficial', value: rates?.oficial.sell ?? 0, color: '#a1a1aa' },
+                { label: 'Blue', value: rates?.blue.sell ?? 0, color: '#10b981' },
+                { label: 'MEP', value: rates?.mep?.sell ?? 0, color: '#818cf8' },
+              ].map(item => (
+                <div key={item.label} className="flex-1 text-center">
+                  <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: item.color }}>
+                    {item.label}
+                  </div>
+                  <div className="text-sm font-bold font-mono text-[var(--text-primary)]">
+                    ${item.value.toLocaleString('es-AR')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Brecha Cambiaria */}
+        <Card variant="gradient" padding="md">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[var(--warning-bg)] flex items-center justify-center border border-[var(--warning-border)]">
+                {brechaRaw >= 0 ? (
+                  <TrendingUp className="w-4 h-4 text-[var(--warning)]" />
+                ) : (
+                  <TrendingDown className="w-4 h-4 text-[var(--success)]" />
+                )}
+              </div>
+              <div>
+                <div className="text-sm font-bold text-[var(--text-primary)]">Brecha cambiaria</div>
+                <div className="text-[10px] text-[var(--text-muted)]">Blue vs Oficial</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              {brechaRaw < 0 ? (
+                <ArrowDownRight className="w-4 h-4 text-[var(--success)]" />
+              ) : (
+                <ArrowUpRight className="w-4 h-4 text-[var(--error)]" />
+              )}
+              <span
+                className={`text-2xl font-bold font-mono ${
+                  brechaRaw < 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'
+                }`}
+              >
+                {brecha.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+          <div className="h-1.5 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.min(brecha, 100)}%`,
+                background: brecha > 40
+                  ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
+                  : 'linear-gradient(90deg, #10b981, #f59e0b)',
+              }}
+            />
           </div>
         </Card>
 
         {/* Exchange Rate Cards */}
         <section>
-          <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Dólares</h2>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-0.5 h-4 rounded-full bg-[var(--success)]" />
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Dólares</h2>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <RateCard
               title="Oficial"
@@ -309,41 +400,13 @@ export default function ExchangePage() {
           </div>
         </section>
 
-        {/* Brecha Cambiaria */}
-        <Card variant="gradient" padding="md" className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[var(--warning-bg)] flex items-center justify-center border border-[var(--warning-border)]">
-              {brechaRaw >= 0 ? (
-                <TrendingUp className="w-4 h-4 text-[var(--warning)]" />
-              ) : (
-                <TrendingDown className="w-4 h-4 text-[var(--success)]" />
-              )}
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-[var(--text-primary)]">Brecha cambiaria</div>
-              <div className="text-[10px] text-[var(--text-muted)]">Oficial vs Blue</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {brechaRaw < 0 ? (
-              <ArrowDownRight className="w-4 h-4 text-[var(--success)]" />
-            ) : (
-              <ArrowUpRight className="w-4 h-4 text-[var(--error)]" />
-            )}
-            <span
-              className={`text-2xl font-bold font-mono ${
-                brechaRaw < 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'
-              }`}
-            >
-              {brecha.toFixed(1)}%
-            </span>
-          </div>
-        </Card>
-
         {/* Euros */}
         {(rates?.oficial_euro?.sell ?? 0) > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Euros</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-0.5 h-4 rounded-full bg-[var(--info)]" />
+              <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Euros</h2>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <RateCard
                 title="Euro Oficial"
