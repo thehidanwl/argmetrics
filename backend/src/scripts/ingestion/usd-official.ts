@@ -1,128 +1,83 @@
 /**
- * Ingestion script for USD official rate from BCRA API
- * 
+ * Ingestion script: USD official rate from BCRA API
+ *
  * Usage: npx tsx src/scripts/ingestion/usd-official.ts
- * 
- * Cron: Daily at 4:00 AM Argentina time
+ * Cron:  Daily at 07:00 UTC via Vercel Cron → GET /api/v1/ingest/usd
+ *
+ * Note: This standalone script is for manual runs.
+ * Production ingestion is handled by the /v1/ingest/usd HTTP endpoint.
  */
 
 import axios from 'axios';
-import { prisma } from '../../config/database';
+import { getPrisma } from '../../config/database.js';
 
 const BCRA_API_URL = process.env.BCRA_API_URL || 'https://api.bcra.gob.ar';
-const CACHE_KEY = 'usd_official';
 
-/**
- * Fetch USD official rate from BCRA API
- * BCRA API provides reference exchange rates
- */
 async function fetchUSDOfficial(): Promise<{ buy: number; sell: number; date: string } | null> {
   try {
-    // BCRA API endpoint for exchange rates
-    // Note: This is a simplified example - real implementation may need different endpoints
-    const response = await axios.get(`${BCRA_API_URL}/estadisticas/v1/monzas`, {
-      timeout: 10000,
-    });
+    const response = await axios.get(`${BCRA_API_URL}/estadisticas/v1/monzas`, { timeout: 10000 });
 
-    if (response.data && Array.isArray(response.data)) {
-      // Find USD official rate from response
-      const usdData = response.data.find(
-        (item: { moneda: string }) => item.moneda === 'Dolar Oficial'
-      );
-
+    if (Array.isArray(response.data)) {
+      const usdData = response.data.find((item: { moneda: string }) => item.moneda === 'Dolar Oficial');
       if (usdData) {
-        return {
-          buy: usdData.compra,
-          sell: usdData.venta,
-          date: usdData.fecha,
-        };
+        return { buy: usdData.compra, sell: usdData.venta, date: usdData.fecha };
       }
     }
 
-    console.log('No USD official data found in BCRA response');
+    console.log('USD official not found in BCRA response');
     return null;
   } catch (error) {
-    console.error('Error fetching USD official from BCRA:', error instanceof Error ? error.message : error);
+    console.error('Error fetching from BCRA:', error instanceof Error ? error.message : error);
     return null;
   }
 }
 
-/**
- * Log ingestion result to database
- */
-async function logIngestion(
-  source: string,
-  metric: string,
-  status: 'success' | 'error' | 'partial',
-  rowsProcessed: number,
-  errorMessage?: string
-): Promise<void> {
-  await prisma.ingestionLog.create({
-    data: {
-      source,
-      metric,
-      status,
-      rowsProcessed,
-      errorMessage,
-      executedAt: new Date(),
-    },
-  });
-}
-
-/**
- * Save USD official rate to database
- */
-async function saveUSDOfficial(data: { buy: number; sell: number; date: string }): Promise<void> {
-  const date = new Date(data.date);
-
-  await prisma.metric.upsert({
-    where: {
-      id: `${CACHE_KEY}-${data.date}`,
-    },
-    update: {
-      value: data.sell,
-      updatedAt: new Date(),
-    },
-    create: {
-      id: `${CACHE_KEY}-${data.date}`,
-      category: 'economy',
-      name: 'usd_official',
-      value: data.sell,
-      date,
-      periodType: 'daily',
-      source: 'BCRA',
-    },
-  });
-}
-
-/**
- * Main ingestion function
- */
 async function runIngestion(): Promise<void> {
   console.log(`[${new Date().toISOString()}] Starting USD official ingestion...`);
+
+  const prisma = getPrisma();
+  if (!prisma) {
+    console.error('❌ Database not configured. Set POSTGRES_URL or DATABASE_URL and re-run.');
+    process.exit(1);
+  }
 
   try {
     const data = await fetchUSDOfficial();
 
     if (!data) {
-      await logIngestion('bcra', 'usd_official', 'error', 0, 'No data fetched from API');
-      console.error('Failed to fetch USD official data');
-      return;
+      await prisma.ingestionLog.create({
+        data: { source: 'BCRA', metric: 'usd_official', status: 'error', rowsProcessed: 0, errorMessage: 'No data from API' },
+      });
+      console.error('No data fetched');
+      process.exit(1);
     }
 
-    await saveUSDOfficial(data);
-    await logIngestion('bcra', 'usd_official', 'success', 1);
+    const date = new Date(data.date);
+    const id = `usd_official-${data.date}`;
 
-    console.log(`[${new Date().toISOString()}] USD official ingestion completed: $${data.sell}`);
+    await prisma.metric.upsert({
+      where: { id },
+      update: { value: data.sell, updatedAt: new Date() },
+      create: { id, category: 'economy', name: 'usd_official', value: data.sell, date, periodType: 'daily', source: 'BCRA' },
+    });
+
+    await prisma.ingestionLog.create({
+      data: { source: 'BCRA', metric: 'usd_official', status: 'success', rowsProcessed: 1 },
+    });
+
+    console.log(`[${new Date().toISOString()}] Done: $${data.sell}`);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    await logIngestion('bcra', 'usd_official', 'error', 0, errorMessage);
-    console.error('Ingestion failed:', errorMessage);
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    try {
+      await prisma.ingestionLog.create({
+        data: { source: 'BCRA', metric: 'usd_official', status: 'error', rowsProcessed: 0, errorMessage: msg },
+      });
+    } catch {}
+    console.error('Ingestion failed:', msg);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Run if called directly
 runIngestion();
