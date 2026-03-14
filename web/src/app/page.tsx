@@ -3,78 +3,34 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
-import { KPICard } from '@/components/cards/KPICard';
-import { Card } from '@/components/ui/Card';
 import { Sparkline } from '@/components/charts/Sparkline';
 import { getUSDRates, getMetrics } from '@/lib/api';
 import { USDRates, Metric } from '@/types';
 import {
-  TrendingUp,
-  AlertTriangle,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  AlertOctagon,
-  Zap,
-  Globe,
-  BarChart3,
-  DollarSign,
+  AlertTriangle, Activity, ArrowUpRight, ArrowDownRight,
+  TrendingUp, AlertOctagon, BarChart3, Globe, DollarSign,
 } from 'lucide-react';
 
-// Generates a deterministic sparkline based on a reference value.
-function generateSparkline(baseValue: number, points = 7): number[] {
+function generateSparkline(base: number, points = 7): number[] {
   return Array.from({ length: points }, (_, i) => {
     const t = i / (points - 1);
-    const trend = 0.96 + 0.04 * t;
-    const wave = 0.005 * Math.sin(i * 1.7 + baseValue % 3);
-    return Math.round(baseValue * trend * (1 + wave));
+    return Math.round(base * (0.96 + 0.04 * t) * (1 + 0.005 * Math.sin(i * 1.7 + base % 3)));
   });
 }
 
-interface RateGridCardProps {
-  title: string;
-  value: number;
-  sparkline: number[];
-  color: string;
-  icon: string;
-  badge?: string;
-}
+// Reusable inline style constants
+const card: React.CSSProperties = {
+  background: 'var(--bg-card)',
+  border: '1px solid rgba(255,255,255,0.10)',
+  borderRadius: 16,
+  padding: 16,
+};
 
-function RateGridCard({ title, value, sparkline, color, icon, badge }: RateGridCardProps) {
-  return (
-    <Card variant="gradient" padding="md" className="relative overflow-hidden group">
-      <div
-        className="absolute -top-8 -right-8 w-20 h-20 rounded-full blur-2xl opacity-20 transition-opacity duration-300 group-hover:opacity-40"
-        style={{ background: `radial-gradient(circle, ${color} 0%, transparent 70%)` }}
-      />
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[10px] uppercase tracking-wider font-bold" style={{ color }}>
-          {title}
-        </span>
-        <div className="flex items-center gap-1.5">
-          {badge && (
-            <span
-              className="text-[9px] font-semibold px-1.5 py-0.5 rounded-md"
-              style={{ backgroundColor: `${color}18`, color }}
-            >
-              {badge}
-            </span>
-          )}
-          <span className="text-sm">{icon}</span>
-        </div>
-      </div>
-      <div className="flex items-end justify-between gap-2">
-        <div>
-          <div className="text-xl font-bold font-mono tracking-tight leading-none" style={{ color }}>
-            ${value.toLocaleString('es-AR')}
-          </div>
-          <div className="text-[9px] text-[var(--text-muted)] mt-1">Venta</div>
-        </div>
-        <Sparkline data={sparkline} color={color} width={56} height={28} />
-      </div>
-    </Card>
-  );
-}
+const sectionLabel: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 8,
+  fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+  letterSpacing: 2, color: '#71717a', marginBottom: 12,
+};
 
 export default function Dashboard() {
   const [rates, setRates] = useState<USDRates | null>(null);
@@ -86,68 +42,38 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setError(null);
-      const [ratesRes, metricsRes] = await Promise.all([
-        getUSDRates(),
-        getMetrics({ limit: 20 }),
-      ]);
+      const [ratesRes, metricsRes] = await Promise.all([getUSDRates(), getMetrics({ limit: 20 })]);
       setRates(ratesRes.data);
       setMetrics(metricsRes.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching data');
+      setError(err instanceof Error ? err.message : 'Error');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
+  const handleRefresh = () => { setRefreshing(true); fetchData(); };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
-
-  const inflation = metrics.find(m => m.name === 'inflation');
+  const inflation   = metrics.find(m => m.name === 'inflation');
   const countryRisk = metrics.find(m => m.name === 'country_risk');
+  const brecha      = Math.abs(Number(rates?.brecha?.value ?? 0));
+  const brechaRaw   = Number(rates?.brecha?.value ?? 0);
 
-  const brecha = Math.abs(Number(rates?.brecha?.value ?? 0));
-  const brechaRaw = Number(rates?.brecha?.value ?? 0);
-
-  const blueSparkline = useMemo(
-    () => generateSparkline(rates?.blue.sell ?? 1425),
-    [rates?.blue.sell]
-  );
-  const oficialSparkline = useMemo(
-    () => generateSparkline(rates?.oficial.sell ?? 1441),
-    [rates?.oficial.sell]
-  );
-  const mepSparkline = useMemo(
-    () => generateSparkline(rates?.mep?.sell ?? 1395),
-    [rates?.mep?.sell]
-  );
-  const cclSparkline = useMemo(
-    () => generateSparkline(rates?.ccl?.sell ?? 1412),
-    [rates?.ccl?.sell]
-  );
+  const blueSp    = useMemo(() => generateSparkline(rates?.blue.sell    ?? 1425), [rates?.blue.sell]);
+  const oficialSp = useMemo(() => generateSparkline(rates?.oficial.sell ?? 1441), [rates?.oficial.sell]);
+  const mepSp     = useMemo(() => generateSparkline(rates?.mep?.sell    ?? 1395), [rates?.mep?.sell]);
+  const cclSp     = useMemo(() => generateSparkline(rates?.ccl?.sell    ?? 1412), [rates?.ccl?.sell]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)]">
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
         <Header title="ArgMetrics" />
-        <div className="p-5 space-y-4 pb-28 max-w-2xl mx-auto">
-          <div className="skeleton rounded-2xl h-36 border border-[var(--border-subtle)]" />
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2].map(i => (
-              <div key={i} className="skeleton rounded-2xl h-24 border border-[var(--border-subtle)]" />
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="skeleton rounded-2xl h-28 border border-[var(--border-subtle)]" />
-            ))}
-          </div>
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: 16 }}>
+          {[140, 90, 90, 130, 70, 90].map((h, i) => (
+            <div key={i} className="skeleton" style={{ height: h, borderRadius: 16, marginBottom: 12 }} />
+          ))}
         </div>
         <BottomNav />
       </div>
@@ -156,267 +82,227 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)]">
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
         <Header title="ArgMetrics" />
-        <div className="p-4 flex flex-col items-center justify-center min-h-[60vh]">
-          <Card className="text-center p-8 max-w-sm w-full">
-            <div className="w-16 h-16 rounded-2xl bg-[var(--error-bg)] flex items-center justify-center mx-auto mb-4 border border-[var(--error-border)]">
-              <AlertOctagon className="w-8 h-8 text-[var(--error)]" />
-            </div>
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Algo salió mal</h3>
-            <p className="text-[var(--text-secondary)] text-sm mb-6">{error}</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: 16 }}>
+          <div style={{ ...card, textAlign: 'center', maxWidth: 360, padding: 32 }}>
+            <AlertOctagon size={40} color="var(--error)" style={{ marginBottom: 16 }} />
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Error al cargar</div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>{error}</div>
             <button
               onClick={handleRefresh}
-              className="w-full py-2.5 bg-[var(--primary-600)] text-white rounded-xl text-sm font-semibold"
+              style={{ width: '100%', padding: '10px 0', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
             >
               Reintentar
             </button>
-          </Card>
+          </div>
         </div>
         <BottomNav />
       </div>
     );
   }
 
+  const blueSell    = rates?.blue.sell    ?? 1425;
+  const blueBuy     = rates?.blue.buy     ?? 1415;
+  const oficialSell = rates?.oficial.sell ?? 1441;
+  const mepSell     = rates?.mep?.sell    ?? 1395;
+  const cclSell     = rates?.ccl?.sell    ?? 1412;
+
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-28">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingBottom: 96 }}>
       <Header
         title="ArgMetrics"
-        subtitle={
-          rates
-            ? `Actualizado ${new Date(rates.oficial.updatedAt).toLocaleTimeString('es-AR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}`
-            : undefined
-        }
+        subtitle={rates ? `Act. ${new Date(rates.oficial.updatedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}` : undefined}
         onRefresh={handleRefresh}
         isRefreshing={refreshing}
       />
 
-      <main className="p-5 space-y-5 max-w-2xl mx-auto">
+      <main style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 0' }}>
 
-        {/* ── HERO: Dólar Blue spotlight ── */}
-        <div className="relative overflow-hidden rounded-2xl border border-[rgba(16,185,129,0.25)] animate-fade-in"
-          style={{
-            background: 'linear-gradient(135deg, rgba(16,185,129,0.12) 0%, var(--bg-card) 50%, var(--bg-tertiary) 100%)',
-          }}
-        >
-          {/* Glow orb */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl opacity-15 pointer-events-none"
-            style={{ background: 'radial-gradient(circle, #10b981, transparent)' }} />
+        {/* ── HERO: USD Blue ── */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(16,185,129,0.13) 0%, var(--bg-card) 55%, var(--bg-tertiary) 100%)',
+          border: '1px solid rgba(16,185,129,0.22)',
+          borderRadius: 20,
+          padding: 20,
+          marginBottom: 12,
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* glow */}
+          <div style={{ position: 'absolute', top: -32, right: -32, width: 140, height: 140, borderRadius: '50%', background: 'radial-gradient(circle, rgba(16,185,129,0.18), transparent)', filter: 'blur(24px)', pointerEvents: 'none' }} />
 
-          <div className="p-5">
-            {/* Label row */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)' }}>
-                  <DollarSign className="w-3.5 h-3.5 text-[var(--success)]" />
-                </div>
-                <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--success)]">
-                  Dólar Blue
-                </span>
+          {/* label row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <div style={{ width: 24, height: 24, borderRadius: 8, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DollarSign size={13} color="#10b981" />
               </div>
-              <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-tertiary)] px-2 py-1 rounded-full border border-[var(--border-subtle)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                EN VIVO
-              </span>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 2.5, textTransform: 'uppercase', color: '#10b981' }}>Dólar Blue</span>
             </div>
-
-            {/* Big price */}
-            <div className="flex items-end gap-4 mt-1">
-              <div className="text-5xl font-bold font-mono tracking-tight text-white leading-none">
-                ${(rates?.blue.sell ?? 1425).toLocaleString('es-AR')}
-              </div>
-              <Sparkline
-                data={blueSparkline}
-                color="#10b981"
-                width={80}
-                height={36}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 600, color: '#71717a', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '3px 9px' }}>
+              <span className="status-dot success" style={{ width: 6, height: 6 }} />
+              EN VIVO
             </div>
+          </div>
 
-            {/* Sub-row */}
-            <div className="flex items-center gap-5 mt-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Compra</div>
-                <div className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                  ${(rates?.blue.buy ?? 1415).toLocaleString('es-AR')}
-                </div>
-              </div>
-              <div className="w-px h-8 bg-[var(--border-subtle)]" />
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Brecha</div>
-                <div className={`text-sm font-bold font-mono flex items-center gap-1 ${brechaRaw >= 0 ? 'text-[var(--error)]' : 'text-[var(--success)]'}`}>
-                  {brechaRaw >= 0
-                    ? <ArrowUpRight className="w-3.5 h-3.5" />
-                    : <ArrowDownRight className="w-3.5 h-3.5" />
-                  }
-                  {brecha.toFixed(1)}%
-                </div>
-              </div>
-              <div className="w-px h-8 bg-[var(--border-subtle)]" />
-              <div>
-                <div className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Oficial</div>
-                <div className="text-sm font-bold font-mono text-[var(--text-secondary)]">
-                  ${(rates?.oficial.sell ?? 1441).toLocaleString('es-AR')}
-                </div>
-              </div>
+          {/* big price + sparkline */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 52, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#fff', lineHeight: 1, letterSpacing: -1 }}>
+              ${blueSell.toLocaleString('es-AR')}
             </div>
+            <Sparkline data={blueSp} color="#10b981" width={88} height={40} />
+          </div>
+
+          {/* sub-stats */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            {[
+              { label: 'Compra', value: `$${blueBuy.toLocaleString('es-AR')}`, color: '#f4f4f5' },
+              { label: 'Brecha', value: `${brecha.toFixed(1)}%`, color: brechaRaw >= 0 ? '#ef4444' : '#10b981' },
+              { label: 'Oficial', value: `$${oficialSell.toLocaleString('es-AR')}`, color: '#a1a1aa' },
+            ].map((item, i) => (
+              <div key={item.label} style={{ flex: 1, textAlign: i === 1 ? 'center' : i === 2 ? 'right' : 'left' }}>
+                <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: '#71717a', marginBottom: 3 }}>{item.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: item.color }}>{item.value}</div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ── KPI GRID ── */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 rounded-full bg-[var(--primary-500)]" />
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Indicadores clave</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3 stagger-children">
-            <KPICard
-              title="Riesgo País"
-              value={countryRisk ? countryRisk.value.toLocaleString('es-AR') : '1,785'}
-              trend={{ direction: 'down', value: '−2.5%', label: 'hoy' }}
-              variant="error"
-              icon={<AlertTriangle className="w-3.5 h-3.5" />}
-            />
-            <KPICard
-              title="Inflación"
-              value={inflation ? `${inflation.value}%` : '3.7%'}
-              trend={{ direction: 'neutral', value: 'mensual', label: '' }}
-              variant="warning"
-              icon={<Activity className="w-3.5 h-3.5" />}
-            />
-          </div>
+        {/* ── INDICADORES MACRO ── */}
+        <div style={sectionLabel}>
+          <div style={{ width: 3, height: 14, background: 'var(--primary-500)', borderRadius: 99 }} />
+          Indicadores macro
         </div>
-
-        {/* ── TIPOS DE CAMBIO ── */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 rounded-full bg-[var(--success)]" />
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Tipos de cambio</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3 stagger-children">
-            <RateGridCard
-              title="Oficial"
-              value={rates?.oficial.sell ?? 1441}
-              sparkline={oficialSparkline}
-              color="#a1a1aa"
-              icon="🏦"
-            />
-            <RateGridCard
-              title="Blue"
-              value={rates?.blue.sell ?? 1425}
-              sparkline={blueSparkline}
-              color="#10b981"
-              icon="💵"
-              badge="LIBRE"
-            />
-            <RateGridCard
-              title="MEP"
-              value={rates?.mep?.sell ?? 1395}
-              sparkline={mepSparkline}
-              color="#818cf8"
-              icon="📊"
-            />
-            <RateGridCard
-              title="CCL"
-              value={rates?.ccl?.sell ?? 1412}
-              sparkline={cclSparkline}
-              color="#f59e0b"
-              icon="💹"
-            />
-          </div>
-        </div>
-
-        {/* ── BRECHA CAMBIARIA (full-width) ── */}
-        <Card variant="gradient" padding="md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[var(--warning-bg)] flex items-center justify-center border border-[var(--warning-border)]">
-                <TrendingUp className="w-4 h-4 text-[var(--warning)]" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-[var(--text-primary)]">Brecha cambiaria</div>
-                <div className="text-[10px] text-[var(--text-muted)]">Blue vs Oficial</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          {/* Riesgo País */}
+          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-tertiary))', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: '#71717a' }}>Riesgo País</span>
+              <div style={{ padding: 5, borderRadius: 8, background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                <AlertTriangle size={12} />
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#ef4444', letterSpacing: -0.5 }}>
+              {countryRisk ? countryRisk.value.toLocaleString('es-AR') : '1,785'}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 5, color: '#10b981', fontSize: 11, fontWeight: 600 }}>
+              <ArrowDownRight size={11} />
+              <span>−2.5% hoy</span>
+            </div>
+          </div>
+
+          {/* Inflación */}
+          <div style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-tertiary))', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: '#71717a' }}>Inflación IPC</span>
+              <div style={{ padding: 5, borderRadius: 8, background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
+                <Activity size={12} />
+              </div>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#f59e0b', letterSpacing: -0.5 }}>
+              {inflation ? `${inflation.value}%` : '3.7%'}
+            </div>
+            <div style={{ fontSize: 11, color: '#71717a', marginTop: 5, fontWeight: 500 }}>mensual · INDEC</div>
+          </div>
+        </div>
+
+        {/* ── COTIZACIONES ── */}
+        <div style={sectionLabel}>
+          <div style={{ width: 3, height: 14, background: '#10b981', borderRadius: 99 }} />
+          Cotizaciones USD
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          {[
+            { label: 'Oficial', value: oficialSell, sp: oficialSp, color: '#a1a1aa', badge: null },
+            { label: 'Blue',    value: blueSell,    sp: blueSp,    color: '#10b981', badge: 'LIBRE' },
+            { label: 'MEP',     value: mepSell,     sp: mepSp,     color: '#818cf8', badge: null },
+            { label: 'CCL',     value: cclSell,     sp: cclSp,     color: '#f59e0b', badge: null },
+          ].map(rate => (
+            <div key={rate.label} style={{ background: 'linear-gradient(135deg, var(--bg-card), var(--bg-tertiary))', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 14, position: 'relative', overflow: 'hidden' }}>
+              {/* color glow top */}
+              <div style={{ position: 'absolute', top: -20, right: -20, width: 60, height: 60, borderRadius: '50%', background: `radial-gradient(circle, ${rate.color}22, transparent)`, filter: 'blur(12px)', pointerEvents: 'none' }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, color: rate.color }}>{rate.label}</span>
+                {rate.badge && (
+                  <span style={{ fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: `${rate.color}18`, color: rate.color }}>{rate.badge}</span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 6 }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: rate.color, lineHeight: 1 }}>
+                    ${rate.value.toLocaleString('es-AR')}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#71717a', marginTop: 4 }}>Venta</div>
+                </div>
+                <Sparkline data={rate.sp} color={rate.color} width={52} height={26} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── BRECHA CAMBIARIA ── */}
+        <div style={{ ...card, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrendingUp size={16} color="#f59e0b" />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Brecha cambiaria</div>
+                <div style={{ fontSize: 10, color: '#71717a', marginTop: 2 }}>Blue vs Oficial</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               {brechaRaw >= 0
-                ? <ArrowUpRight className="w-4 h-4 text-[var(--error)]" />
-                : <ArrowDownRight className="w-4 h-4 text-[var(--success)]" />
-              }
-              <span
-                className={`text-2xl font-bold font-mono ${
-                  brechaRaw >= 0 ? 'text-[var(--error)]' : 'text-[var(--success)]'
-                }`}
-              >
+                ? <ArrowUpRight size={16} color="#ef4444" />
+                : <ArrowDownRight size={16} color="#10b981" />}
+              <span style={{ fontSize: 28, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: brechaRaw >= 0 ? '#ef4444' : '#10b981' }}>
                 {brecha.toFixed(1)}%
               </span>
             </div>
           </div>
-          {/* Visual bar */}
-          <div className="mt-1">
-            <div className="flex justify-between text-[9px] text-[var(--text-muted)] mb-1">
-              <span>0%</span>
-              <span>50%</span>
-              <span>100%</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-700"
-                style={{
-                  width: `${Math.min(brecha, 100)}%`,
-                  background: brecha > 40
-                    ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
-                    : 'linear-gradient(90deg, #10b981, #f59e0b)',
-                }}
-              />
-            </div>
+          <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 99,
+              width: `${Math.min(brecha, 100)}%`,
+              background: brecha > 40 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #10b981, #f59e0b)',
+              transition: 'width 0.6s ease',
+            }} />
           </div>
-        </Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: '#71717a', marginTop: 4 }}>
+            <span>0%</span><span>50%</span><span>100%</span>
+          </div>
+        </div>
 
         {/* ── EXPLORAR ── */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 rounded-full bg-[var(--primary-400)]" />
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Explorar</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Card variant="outlined" padding="sm" hover className="group">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[var(--primary-500)]/10 flex items-center justify-center border border-[var(--primary-500)]/20 group-hover:border-[var(--primary-500)]/40 transition-colors">
-                  <BarChart3 className="w-5 h-5 text-[var(--primary-400)]" />
+        <div style={sectionLabel}>
+          <div style={{ width: 3, height: 14, background: 'var(--primary-400)', borderRadius: 99 }} />
+          Explorar
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+          {[
+            { icon: <BarChart3 size={20} color="var(--primary-400)" />, label: 'Economía', count: '9 indicadores', bg: 'rgba(99,102,241,0.10)', border: 'rgba(99,102,241,0.2)' },
+            { icon: <Globe size={20} color="#10b981" />, label: 'Social', count: '2 indicadores', bg: 'rgba(16,185,129,0.10)', border: 'rgba(16,185,129,0.2)' },
+          ].map(item => (
+            <div key={item.label} style={{ background: 'var(--bg-card)', border: '1.5px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 14, cursor: 'pointer' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: item.bg, border: `1px solid ${item.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {item.icon}
                 </div>
                 <div>
-                  <div className="text-xs font-semibold text-[var(--text-primary)]">Economía</div>
-                  <div className="text-[10px] text-[var(--text-muted)]">9 indicadores</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.label}</div>
+                  <div style={{ fontSize: 10, color: '#71717a', marginTop: 2 }}>{item.count}</div>
                 </div>
               </div>
-            </Card>
-            <Card variant="outlined" padding="sm" hover className="group">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[var(--success-bg)] flex items-center justify-center border border-[var(--success-border)] group-hover:border-[var(--success)]/40 transition-colors">
-                  <Globe className="w-5 h-5 text-[var(--success)]" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-[var(--text-primary)]">Social</div>
-                  <div className="text-[10px] text-[var(--text-muted)]">2 indicadores</div>
-                </div>
-              </div>
-            </Card>
-          </div>
+            </div>
+          ))}
         </div>
 
-        <div className="text-center py-2">
-          <p className="text-[10px] text-[var(--text-muted)] flex items-center justify-center gap-1">
-            <Zap className="w-3 h-3" />
-            Datos de referencia. No constituyen asesoramiento financiero.
-          </p>
+        <div style={{ textAlign: 'center', fontSize: 10, color: '#52525b', paddingBottom: 8 }}>
+          Datos informativos. No constituyen asesoramiento financiero.
         </div>
       </main>
-
       <BottomNav />
     </div>
   );

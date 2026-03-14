@@ -2,77 +2,55 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { Header } from '@/components/layout/Header';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { RateCard } from '@/components/cards/RateCard';
-import { Card } from '@/components/ui/Card';
 import { getUSDRates } from '@/lib/api';
 import { USDRates } from '@/types';
 import { AlertTriangle, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 type Period = '1D' | '7D' | '30D' | '90D' | '1A';
+const PERIOD_LABELS: Record<Period, string> = { '1D': 'Hoy', '7D': '7 días', '30D': '30 días', '90D': '90 días', '1A': '1 año' };
 
-const PERIOD_LABELS: Record<Period, string> = {
-  '1D': 'Hoy',
-  '7D': '7 días',
-  '30D': '30 días',
-  '90D': '90 días',
-  '1A': '1 año',
-};
-
-// Generates deterministic historical chart data for multiple exchange rate types.
-function generateChartData(
-  oficialSell: number,
-  blueSell: number,
-  mepSell: number,
-  period: Period
-): Array<{ fecha: string; Oficial: number; Blue: number; MEP: number }> {
-  const configs: Record<Period, { points: number }> = {
-    '1D': { points: 12 },
-    '7D': { points: 7 },
-    '30D': { points: 30 },
-    '90D': { points: 18 },
-    '1A': { points: 12 },
-  };
-
-  const { points } = configs[period];
-
+function generateChartData(oficialSell: number, blueSell: number, mepSell: number, period: Period) {
+  const points = { '1D': 12, '7D': 7, '30D': 30, '90D': 18, '1A': 12 }[period];
   return Array.from({ length: points }, (_, i) => {
     const t = i / (points - 1);
     const trend = 0.93 + 0.07 * t;
-
     let fecha: string;
     if (period === '1D') {
-      const hour = 9 + Math.round((i * 9) / (points - 1));
-      fecha = `${hour.toString().padStart(2, '0')}:00`;
+      fecha = `${(9 + Math.round(i * 9 / (points - 1))).toString().padStart(2, '0')}:00`;
     } else if (period === '1A') {
-      const d = new Date();
-      d.setMonth(d.getMonth() - (points - 1 - i));
+      const d = new Date(); d.setMonth(d.getMonth() - (points - 1 - i));
       fecha = d.toLocaleDateString('es-AR', { month: 'short' });
     } else {
       const totalDays = period === '7D' ? 7 : period === '30D' ? 30 : 90;
-      const daysBack = Math.round(((points - 1 - i) * totalDays) / (points - 1));
-      const d = new Date();
-      d.setDate(d.getDate() - daysBack);
+      const d = new Date(); d.setDate(d.getDate() - Math.round((points - 1 - i) * totalDays / (points - 1)));
       fecha = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
     }
-
     return {
       fecha,
       Oficial: Math.round(oficialSell * trend * (1 + 0.004 * Math.sin(i * 1.7 + 0.3))),
-      Blue: Math.round(blueSell * trend * (1 + 0.007 * Math.sin(i * 1.2 + 1.1))),
-      MEP: Math.round(mepSell * trend * (1 + 0.005 * Math.sin(i * 1.5 + 0.7))),
+      Blue:    Math.round(blueSell    * trend * (1 + 0.007 * Math.sin(i * 1.2 + 1.1))),
+      MEP:     Math.round(mepSell     * trend * (1 + 0.005 * Math.sin(i * 1.5 + 0.7))),
     };
   });
 }
+
+const card: React.CSSProperties = {
+  background: 'var(--bg-card)',
+  border: '1px solid rgba(255,255,255,0.10)',
+  borderRadius: 16,
+  padding: 16,
+};
+
+const sectionLabel: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 8,
+  fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+  letterSpacing: 2, color: '#71717a', marginBottom: 12,
+};
 
 export default function ExchangePage() {
   const [rates, setRates] = useState<USDRates | null>(null);
@@ -80,56 +58,38 @@ export default function ExchangePage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('30D');
-
   const periods: Period[] = ['1D', '7D', '30D', '90D', '1A'];
 
   const fetchData = async () => {
     try {
       setError(null);
-      const ratesRes = await getUSDRates();
-      setRates(ratesRes.data);
+      const res = await getUSDRates();
+      setRates(res.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error fetching data');
+      setError(err instanceof Error ? err.message : 'Error');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
+  useEffect(() => { fetchData(); }, []);
+  const handleRefresh = () => { setRefreshing(true); fetchData(); };
 
   const chartData = useMemo(() => {
     if (!rates) return [];
-    return generateChartData(
-      rates.oficial.sell,
-      rates.blue.sell,
-      rates.mep?.sell ?? Math.round(rates.oficial.sell * 0.97),
-      selectedPeriod
-    );
+    return generateChartData(rates.oficial.sell, rates.blue.sell, rates.mep?.sell ?? Math.round(rates.oficial.sell * 0.97), selectedPeriod);
   }, [rates, selectedPeriod]);
 
-  const brecha = Math.abs(Number(rates?.brecha?.value ?? 0));
+  const brecha    = Math.abs(Number(rates?.brecha?.value ?? 0));
   const brechaRaw = Number(rates?.brecha?.value ?? 0);
-
-  const formatTime = (dateStr: string) =>
-    new Date(dateStr).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)]">
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
         <Header title="Tipo de Cambio" />
-        <div className="p-5 space-y-4 pb-28">
-          <div className="skeleton rounded-2xl h-10" />
-          <div className="skeleton rounded-2xl h-60" />
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="skeleton rounded-2xl h-24" />
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: 16 }}>
+          {[48, 260, 100, 100, 80].map((h, i) => (
+            <div key={i} className="skeleton" style={{ height: h, borderRadius: 16, marginBottom: 12 }} />
           ))}
         </div>
         <BottomNav />
@@ -139,15 +99,12 @@ export default function ExchangePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)]">
+      <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
         <Header title="Tipo de Cambio" onRefresh={handleRefresh} isRefreshing={refreshing} />
-        <div className="p-4 flex flex-col items-center justify-center h-[60vh]">
-          <AlertTriangle className="w-12 h-12 text-[var(--error)] mb-4" />
-          <p className="text-[var(--text-secondary)] text-sm mb-4 text-center">{error}</p>
-          <button
-            onClick={handleRefresh}
-            className="px-4 py-2 bg-[var(--primary-600)] text-white rounded-xl text-sm font-medium"
-          >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', gap: 12 }}>
+          <AlertTriangle size={40} color="var(--error)" />
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13, textAlign: 'center' }}>{error}</p>
+          <button onClick={handleRefresh} style={{ padding: '8px 20px', background: 'var(--primary-600)', color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
             Reintentar
           </button>
         </div>
@@ -157,278 +114,157 @@ export default function ExchangePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] pb-28">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingBottom: 96 }}>
       <Header
         title="Tipo de Cambio"
-        subtitle={rates ? `Actualizado: ${formatTime(rates.oficial.updatedAt)}` : undefined}
+        subtitle={rates ? `Act. ${new Date(rates.oficial.updatedAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}` : undefined}
         onRefresh={handleRefresh}
         isRefreshing={refreshing}
       />
 
-      <main className="p-5 space-y-5 max-w-2xl mx-auto">
+      <main style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 0' }}>
 
-        {/* Period Selector */}
-        <div className="flex gap-1.5 p-1 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)]">
-          {periods.map(period => (
+        {/* Period tabs */}
+        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-secondary)', borderRadius: 14, padding: 4, border: '1px solid rgba(255,255,255,0.07)', marginBottom: 14 }}>
+          {periods.map(p => (
             <button
-              key={period}
-              onClick={() => setSelectedPeriod(period)}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                selectedPeriod === period
-                  ? 'bg-[var(--primary-600)] text-white shadow-lg shadow-purple-500/30'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
+              key={p}
+              onClick={() => setSelectedPeriod(p)}
+              style={{
+                flex: 1, padding: '8px 0', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                background: selectedPeriod === p ? 'var(--primary-600)' : 'transparent',
+                color: selectedPeriod === p ? 'white' : '#71717a',
+                boxShadow: selectedPeriod === p ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                transition: 'all 0.2s',
+              }}
             >
-              {period}
+              {p}
             </button>
           ))}
         </div>
 
         {/* Chart */}
-        <Card variant="gradient" padding="md">
-          {/* Chart header */}
-          <div className="flex items-center justify-between mb-4">
+        <div style={{ ...card, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <h3 className="text-sm font-bold text-[var(--text-primary)]">
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                 Evolución · {PERIOD_LABELS[selectedPeriod]}
-              </h3>
-              <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Valores de venta en pesos</p>
+              </div>
+              <div style={{ fontSize: 10, color: '#71717a', marginTop: 2 }}>Valores de venta en pesos</div>
             </div>
-            <div className="flex items-center gap-3 text-[10px]">
-              <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#a1a1aa] opacity-60" />
-                Oficial
-              </span>
-              <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#10b981] opacity-60" />
-                Blue
-              </span>
-              <span className="flex items-center gap-1.5 text-[var(--text-muted)]">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#818cf8] opacity-60" />
-                MEP
-              </span>
+            <div style={{ display: 'flex', gap: 12, fontSize: 10, color: '#71717a' }}>
+              {[{ label: 'Oficial', color: '#a1a1aa' }, { label: 'Blue', color: '#10b981' }, { label: 'MEP', color: '#818cf8' }].map(s => (
+                <span key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, opacity: 0.7, display: 'inline-block' }} />
+                  {s.label}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* Area chart with gradient fills */}
-          <div className="h-52">
+          <div style={{ height: 200 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                 <defs>
-                  <linearGradient id="gradOficial" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a1a1aa" stopOpacity={0.25} />
+                  <linearGradient id="gOficial" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#a1a1aa" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#a1a1aa" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                  <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.3} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
-                  <linearGradient id="gradMEP" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25} />
+                  <linearGradient id="gMEP" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor="#818cf8" stopOpacity={0.25} />
                     <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.04)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="fecha"
-                  tick={{ fontSize: 10, fill: '#52525b' }}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#52525b' }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={v => `$${(v / 1000).toFixed(1)}k`}
-                  domain={['auto', 'auto']}
-                  width={38}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#52525b' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 10, fill: '#52525b' }} tickLine={false} axisLine={false} tickFormatter={v => `$${(v/1000).toFixed(1)}k`} domain={['auto','auto']} width={38} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#1c1c2e',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    padding: '8px 12px',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                  }}
-                  labelStyle={{ color: '#a1a1aa', marginBottom: 6, fontWeight: 600 }}
-                  formatter={(value: number, name: string) => [
-                    `$${value.toLocaleString('es-AR')}`,
-                    name,
-                  ]}
+                  contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, fontSize: 12, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}
+                  labelStyle={{ color: '#a1a1aa', marginBottom: 4, fontWeight: 600 }}
+                  formatter={(v: number, name: string) => [`$${v.toLocaleString('es-AR')}`, name]}
                   cursor={{ stroke: 'rgba(255,255,255,0.08)', strokeWidth: 1 }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="Oficial"
-                  stroke="#a1a1aa"
-                  strokeWidth={1.5}
-                  fill="url(#gradOficial)"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Blue"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  fill="url(#gradBlue)"
-                  dot={false}
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="MEP"
-                  stroke="#818cf8"
-                  strokeWidth={1.5}
-                  fill="url(#gradMEP)"
-                  dot={false}
-                  isAnimationActive={false}
-                />
+                <Area type="monotone" dataKey="Oficial" stroke="#a1a1aa" strokeWidth={1.5} fill="url(#gOficial)" dot={false} isAnimationActive={false} />
+                <Area type="monotone" dataKey="Blue"    stroke="#10b981" strokeWidth={2}   fill="url(#gBlue)"    dot={false} isAnimationActive={false} />
+                <Area type="monotone" dataKey="MEP"     stroke="#818cf8" strokeWidth={1.5} fill="url(#gMEP)"     dot={false} isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Current values summary */}
-          {chartData.length > 0 && (
-            <div className="flex gap-3 mt-4 pt-4 border-t border-[var(--border-subtle)]">
-              {[
-                { label: 'Oficial', value: rates?.oficial.sell ?? 0, color: '#a1a1aa' },
-                { label: 'Blue', value: rates?.blue.sell ?? 0, color: '#10b981' },
-                { label: 'MEP', value: rates?.mep?.sell ?? 0, color: '#818cf8' },
-              ].map(item => (
-                <div key={item.label} className="flex-1 text-center">
-                  <div className="text-[9px] uppercase tracking-wider mb-1" style={{ color: item.color }}>
-                    {item.label}
-                  </div>
-                  <div className="text-sm font-bold font-mono text-[var(--text-primary)]">
-                    ${item.value.toLocaleString('es-AR')}
-                  </div>
+          {/* Current price summary */}
+          <div style={{ display: 'flex', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            {[
+              { label: 'Oficial', value: rates?.oficial.sell ?? 0, color: '#a1a1aa' },
+              { label: 'Blue',    value: rates?.blue.sell    ?? 0, color: '#10b981' },
+              { label: 'MEP',     value: rates?.mep?.sell    ?? 0, color: '#818cf8' },
+            ].map((item, i) => (
+              <div key={item.label} style={{ flex: 1, textAlign: i === 1 ? 'center' : i === 2 ? 'right' : 'left' }}>
+                <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, color: item.color, marginBottom: 3 }}>{item.label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-primary)' }}>
+                  ${item.value.toLocaleString('es-AR')}
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+              </div>
+            ))}
+          </div>
+        </div>
 
-        {/* Brecha Cambiaria */}
-        <Card variant="gradient" padding="md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[var(--warning-bg)] flex items-center justify-center border border-[var(--warning-border)]">
-                {brechaRaw >= 0 ? (
-                  <TrendingUp className="w-4 h-4 text-[var(--warning)]" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-[var(--success)]" />
-                )}
+        {/* Brecha card */}
+        <div style={{ ...card, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {brechaRaw >= 0 ? <TrendingUp size={15} color="#f59e0b" /> : <TrendingDown size={15} color="#10b981" />}
               </div>
               <div>
-                <div className="text-sm font-bold text-[var(--text-primary)]">Brecha cambiaria</div>
-                <div className="text-[10px] text-[var(--text-muted)]">Blue vs Oficial</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Brecha cambiaria</div>
+                <div style={{ fontSize: 10, color: '#71717a' }}>Blue vs Oficial</div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {brechaRaw < 0 ? (
-                <ArrowDownRight className="w-4 h-4 text-[var(--success)]" />
-              ) : (
-                <ArrowUpRight className="w-4 h-4 text-[var(--error)]" />
-              )}
-              <span
-                className={`text-2xl font-bold font-mono ${
-                  brechaRaw < 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'
-                }`}
-              >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              {brechaRaw < 0 ? <ArrowDownRight size={16} color="#10b981" /> : <ArrowUpRight size={16} color="#ef4444" />}
+              <span style={{ fontSize: 26, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: brechaRaw < 0 ? '#10b981' : '#ef4444' }}>
                 {brecha.toFixed(1)}%
               </span>
             </div>
           </div>
-          <div className="h-1.5 rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${Math.min(brecha, 100)}%`,
-                background: brecha > 40
-                  ? 'linear-gradient(90deg, #f59e0b, #ef4444)'
-                  : 'linear-gradient(90deg, #10b981, #f59e0b)',
-              }}
-            />
+          <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 99, width: `${Math.min(brecha, 100)}%`,
+              background: brecha > 40 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #10b981, #f59e0b)',
+            }} />
           </div>
-        </Card>
+        </div>
 
-        {/* Exchange Rate Cards */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-0.5 h-4 rounded-full bg-[var(--success)]" />
-            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Dólares</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <RateCard
-              title="Oficial"
-              buy={rates?.oficial.buy ?? 0}
-              sell={rates?.oficial.sell ?? 0}
-              variation={0.5}
-              icon="🏦"
-              variant="official"
-            />
-            <RateCard
-              title="Blue"
-              buy={rates?.blue.buy ?? 0}
-              sell={rates?.blue.sell ?? 0}
-              variation={1.2}
-              icon="💵"
-              variant="blue"
-            />
-            <RateCard
-              title="MEP"
-              buy={rates?.mep?.buy ?? 0}
-              sell={rates?.mep?.sell ?? 0}
-              variation={0.3}
-              icon="📊"
-            />
-            <RateCard
-              title="CCL"
-              buy={rates?.ccl?.buy ?? 0}
-              sell={rates?.ccl?.sell ?? 0}
-              variation={0.8}
-              icon="💹"
-            />
-          </div>
-        </section>
+        {/* Rate cards */}
+        <div style={sectionLabel}>
+          <div style={{ width: 3, height: 14, background: '#10b981', borderRadius: 99 }} />
+          Dólares
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <RateCard title="Oficial" buy={rates?.oficial.buy ?? 0} sell={rates?.oficial.sell ?? 0} variation={0.5} icon="🏦" variant="official" />
+          <RateCard title="Blue"    buy={rates?.blue.buy    ?? 0} sell={rates?.blue.sell    ?? 0} variation={1.2} icon="💵" variant="blue" />
+          <RateCard title="MEP"     buy={rates?.mep?.buy    ?? 0} sell={rates?.mep?.sell    ?? 0} variation={0.3} icon="📊" />
+          <RateCard title="CCL"     buy={rates?.ccl?.buy    ?? 0} sell={rates?.ccl?.sell    ?? 0} variation={0.8} icon="💹" />
+        </div>
 
         {/* Euros */}
         {(rates?.oficial_euro?.sell ?? 0) > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-0.5 h-4 rounded-full bg-[var(--info)]" />
-              <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Euros</h2>
+          <>
+            <div style={sectionLabel}>
+              <div style={{ width: 3, height: 14, background: '#3b82f6', borderRadius: 99 }} />
+              Euros
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <RateCard
-                title="Euro Oficial"
-                buy={rates?.oficial_euro?.buy ?? 0}
-                sell={rates?.oficial_euro?.sell ?? 0}
-                variation={0.4}
-                icon="💶"
-                variant="official"
-              />
-              <RateCard
-                title="Euro Blue"
-                buy={rates?.blue_euro?.buy ?? 0}
-                sell={rates?.blue_euro?.sell ?? 0}
-                variation={0.9}
-                icon="💶"
-                variant="blue"
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+              <RateCard title="Euro Oficial" buy={rates?.oficial_euro?.buy ?? 0} sell={rates?.oficial_euro?.sell ?? 0} variation={0.4} icon="💶" variant="official" />
+              <RateCard title="Euro Blue"    buy={rates?.blue_euro?.buy    ?? 0} sell={rates?.blue_euro?.sell    ?? 0} variation={0.9} icon="💶" variant="blue" />
             </div>
-          </section>
+          </>
         )}
       </main>
-
       <BottomNav />
     </div>
   );
