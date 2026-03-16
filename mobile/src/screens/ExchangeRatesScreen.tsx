@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, RefreshControl, StyleSheet,
-  TouchableOpacity, ActivityIndicator,
+  TouchableOpacity, ActivityIndicator, Dimensions,
 } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 import { useMetricsStore } from '../store/metricsStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -99,7 +101,7 @@ export default function ExchangeRatesScreen() {
               <LineChart
                 data={chartData.oficial}
                 data2={chartData.blue}
-                width={300}
+                width={SCREEN_WIDTH - 60}
                 height={160}
                 thickness={2}
                 thickness2={2.5}
@@ -153,7 +155,7 @@ export default function ExchangeRatesScreen() {
             </View>
             <View style={ex.gaugeTrack}>
               <View style={[ex.gaugeFill, {
-                width: `${Math.min(brecha, 100)}%` as any,
+                width: `${Math.min(brecha, 100)}%` as `${number}%`,
                 backgroundColor: brecha > 40 ? '#ef4444' : '#f59e0b',
               }]} />
             </View>

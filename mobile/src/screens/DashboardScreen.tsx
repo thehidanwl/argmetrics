@@ -45,18 +45,19 @@ function Sparkline({ base, color }: { base: number; color: string }) {
 }
 
 export default function DashboardScreen() {
-  const { usdRates, countryRisk, isLoadingLive, fetchUSDRates, fetchCountryRisk } = useMetricsStore();
+  const { usdRates, countryRisk, metrics, isLoadingLive, fetchUSDRates, fetchCountryRisk, fetchMetrics } = useMetricsStore();
   const [refreshing, setRefreshing] = React.useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     fetchUSDRates();
     fetchCountryRisk();
+    fetchMetrics({ limit: 20 });
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchUSDRates(), fetchCountryRisk()]);
+    await Promise.all([fetchUSDRates(), fetchCountryRisk(), fetchMetrics({ limit: 20 })]);
     setRefreshing(false);
   };
 
@@ -70,7 +71,8 @@ export default function DashboardScreen() {
   const mepSell     = rates?.mep.sell     ?? 1395;
   const cclSell     = rates?.ccl.sell     ?? 1412;
   const riesgo      = countryRisk?.value  ?? 1785;
-  const inflation   = 3.7; // from metrics store ideally
+  const inflationMetric = metrics.find(m => m.name.includes('inflation'));
+  const inflation   = inflationMetric?.value ?? 4.2;
 
   const RATES = [
     { label: 'Oficial', value: oficialSell, color: '#a1a1aa' },
@@ -197,7 +199,7 @@ export default function DashboardScreen() {
               <View style={[
                 s.gaugeFill,
                 {
-                  width: `${Math.min(brecha, 100)}%` as any,
+                  width: `${Math.min(brecha, 100)}%` as `${number}%`,
                   backgroundColor: brecha > 40 ? '#ef4444' : '#f59e0b',
                 }
               ]} />
