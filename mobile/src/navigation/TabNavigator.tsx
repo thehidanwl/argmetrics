@@ -1,7 +1,8 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRatesScreen from '../screens/ExchangeRatesScreen';
@@ -26,35 +27,50 @@ const Tab = createBottomTabNavigator<TabParamList>();
 function TabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: '#6366F1',
-        tabBarInactiveTintColor: '#8B949E',
+      screenOptions={({ route }) => ({
+        tabBarActiveTintColor: '#818cf8',
+        tabBarInactiveTintColor: '#52525a',
         tabBarStyle: {
-          backgroundColor: '#161B22',
-          borderTopColor: '#30363D',
-          paddingBottom: 5,
+          backgroundColor: '#1c1c26',
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(255,255,255,0.08)',
           height: 60,
+          paddingBottom: 8,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
+          fontSize: 10,
+          fontWeight: '600',
+          letterSpacing: 0.3,
         },
         headerStyle: {
-          backgroundColor: '#161B22',
-        },
-        headerTintColor: '#F0F6FC',
+          backgroundColor: '#1c1c26',
+          borderBottomWidth: 1,
+          borderBottomColor: 'rgba(255,255,255,0.08)',
+        } as any,
+        headerShadowVisible: false,
+        headerTintColor: '#f4f4f5',
         headerTitleStyle: {
-          fontWeight: '600',
+          fontWeight: '700',
+          fontSize: 17,
+          color: '#f4f4f5',
         },
-      }}
+        headerLeft: () => (
+          <View style={{
+            width: 34, height: 34, borderRadius: 10, marginLeft: 16,
+            backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Text style={{ color: 'white', fontWeight: '800', fontSize: 16 }}>A</Text>
+          </View>
+        ),
+      })}
     >
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="view-dashboard" size={size} color={color} />
-          ),
+          tabBarLabel: 'Inicio',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
           headerTitle: 'ArgMetrics',
         }}
       />
@@ -62,9 +78,8 @@ function TabNavigator() {
         name="Exchange"
         component={ExchangeRatesScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="currency-usd" size={size} color={color} />
-          ),
+          tabBarLabel: 'Cambio',
+          tabBarIcon: ({ color, size }) => <Ionicons name="swap-horizontal" size={size} color={color} />,
           headerTitle: 'Tipo de Cambio',
         }}
       />
@@ -72,19 +87,17 @@ function TabNavigator() {
         name="Metrics"
         component={MetricsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chart-line" size={size} color={color} />
-          ),
-          headerTitle: 'Métricas',
+          tabBarLabel: 'Métricas',
+          tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" size={size} color={color} />,
+          headerTitle: 'Indicadores',
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="cog" size={size} color={color} />
-          ),
+          tabBarLabel: 'Ajustes',
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
           headerTitle: 'Ajustes',
         }}
       />
@@ -95,11 +108,7 @@ function TabNavigator() {
 export default function AppNavigator() {
   return (
     <Stack.Navigator>
-      <Stack.Screen
-        name="MainTabs"
-        component={TabNavigator}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="MainTabs" component={TabNavigator} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
