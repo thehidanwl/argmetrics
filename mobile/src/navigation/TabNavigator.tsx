@@ -3,15 +3,17 @@ import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import DashboardScreen from '../screens/DashboardScreen';
 import ExchangeRatesScreen from '../screens/ExchangeRatesScreen';
 import MetricsScreen from '../screens/MetricsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import MetricDetailScreen from '../screens/MetricDetailScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
-  MetricDetail: { metricName: string };
+  MetricDetail: { metricName: string; metricLabel?: string; metricColor?: string };
 };
 
 export type TabParamList = {
@@ -25,6 +27,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function TabNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -34,8 +37,8 @@ function TabNavigator() {
           backgroundColor: '#1c1c26',
           borderTopWidth: 1,
           borderTopColor: 'rgba(255,255,255,0.08)',
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 6,
         },
         tabBarLabelStyle: {
@@ -109,6 +112,17 @@ export default function AppNavigator() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="MainTabs" component={TabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="MetricDetail"
+        component={MetricDetailScreen}
+        options={({ route }) => ({
+          title: route.params.metricLabel ?? route.params.metricName,
+          headerStyle: { backgroundColor: '#1c1c26' },
+          headerTintColor: '#f4f4f5',
+          headerTitleStyle: { fontWeight: '700', fontSize: 17 },
+          headerShadowVisible: false,
+        })}
+      />
     </Stack.Navigator>
   );
 }

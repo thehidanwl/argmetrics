@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useMetricsStore } from '../store/metricsStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { RootStackParamList } from '../navigation/TabNavigator';
 
 type TabCat = 'all' | 'economy' | 'social' | 'consumption';
 const CAT_LABELS: Record<TabCat, string> = { all: 'Todos', economy: 'Economía', social: 'Social', consumption: 'Consumo' };
@@ -25,6 +28,7 @@ export default function MetricsScreen() {
   const { categories, isLoadingCategories, fetchCategories } = useMetricsStore();
   const [selectedCat, setSelectedCat] = useState<TabCat>('all');
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => { fetchCategories(); }, []);
 
@@ -83,7 +87,15 @@ export default function MetricsScreen() {
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => {
             return (
-              <View style={m.metricRow}>
+              <TouchableOpacity
+                style={m.metricRow}
+                onPress={() => navigation.navigate('MetricDetail', {
+                  metricName: item.name,
+                  metricLabel: item.label,
+                  metricColor: item.color,
+                })}
+                activeOpacity={0.7}
+              >
                 {/* Icon */}
                 <View style={[m.metricIcon, { backgroundColor: item.color + '12', borderColor: item.color + '25' }]}>
                   <Text style={[m.metricIconText, { color: item.color }]}>{item.icon}</Text>
@@ -101,7 +113,7 @@ export default function MetricsScreen() {
                 </View>
                 {/* Arrow */}
                 <Text style={[m.arrow, { color: item.color }]}>›</Text>
-              </View>
+              </TouchableOpacity>
             );
           }}
         />
