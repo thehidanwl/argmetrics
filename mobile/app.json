@@ -7,8 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
       "backgroundColor": "#0D1117"
     },
     "assetBundlePatterns": [
@@ -16,14 +14,14 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.argmetrics.app"
+      "bundleIdentifier": "io.argmetrics.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0D1117"
       },
-      "package": "com.argmetrics.app"
+      "package": "io.argmetrics.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +30,10 @@
       "eas": {
         "projectId": "argmetrics"
       }
-    }
+    },
+    "plugins": [
+      "expo-font",
+      "expo-asset"
+    ]
   }
 }

@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { ApiResponse, ApiError } from '../types';
 
 // Configure base URL - change for production
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/v1';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://argmetrics.vercel.app/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;

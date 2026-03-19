@@ -2,14 +2,13 @@ import React, { useEffect } from 'react';
 import {
   View, Text, ScrollView, RefreshControl, StyleSheet, ActivityIndicator,
 } from 'react-native';
-import { LineChart } from 'react-native-gifted-charts';
 import { useMetricsStore } from '../store/metricsStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-function genSparkline(base: number, points = 7): { value: number }[] {
-  return Array.from({ length: points }, (_, i) => ({
-    value: Math.round(base * (0.96 + 0.04 * (i / (points - 1))) * (1 + 0.005 * Math.sin(i * 1.7 + (base % 3)))),
-  }));
+function genSparkline(base: number, points = 7): number[] {
+  return Array.from({ length: points }, (_, i) =>
+    Math.round(base * (0.96 + 0.04 * (i / (points - 1))) * (1 + 0.005 * Math.sin(i * 1.7 + (base % 3))))
+  );
 }
 
 function SectionHeader({ label, color }: { label: string; color: string }) {
@@ -23,24 +22,24 @@ function SectionHeader({ label, color }: { label: string; color: string }) {
 
 function Sparkline({ base, color }: { base: number; color: string }) {
   const data = genSparkline(base);
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
   return (
-    <LineChart
-      data={data}
-      width={60}
-      height={28}
-      thickness={2}
-      color={color}
-      hideDataPoints
-      hideRules
-      hideAxesAndRules
-      areaChart
-      startFillColor={color + '30'}
-      endFillColor={color + '00'}
-      initialSpacing={0}
-      endSpacing={0}
-      curved
-      yAxisOffset={Math.min(...data.map(d => d.value)) - 5}
-    />
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', width: 60, height: 28, gap: 2 }}>
+      {data.map((v, i) => (
+        <View
+          key={i}
+          style={{
+            flex: 1,
+            height: Math.max(3, Math.round(((v - min) / range) * 24) + 4),
+            backgroundColor: color,
+            opacity: 0.5 + 0.5 * (i / (data.length - 1)),
+            borderRadius: 2,
+          }}
+        />
+      ))}
+    </View>
   );
 }
 
@@ -65,11 +64,11 @@ export default function DashboardScreen() {
   const brecha = Math.abs(Number(rates?.brecha?.value ?? 0));
   const brechaRaw = Number(rates?.brecha?.value ?? 0);
 
-  const blueSell    = rates?.blue.sell    ?? 1425;
-  const blueBuy     = rates?.blue.buy     ?? 1415;
-  const oficialSell = rates?.official.sell ?? 1441;
-  const mepSell     = rates?.mep.sell     ?? 1395;
-  const cclSell     = rates?.ccl.sell     ?? 1412;
+  const blueSell    = rates?.blue?.sell    ?? 1425;
+  const blueBuy     = rates?.blue?.buy     ?? 1415;
+  const oficialSell = rates?.official?.sell ?? 1441;
+  const mepSell     = rates?.mep?.sell     ?? 1395;
+  const cclSell     = rates?.ccl?.sell     ?? 1412;
   const riesgo      = countryRisk?.value  ?? 1785;
   const inflationMetric = metrics.find(m => m.name.includes('inflation'));
   const inflation   = inflationMetric?.value ?? 4.2;

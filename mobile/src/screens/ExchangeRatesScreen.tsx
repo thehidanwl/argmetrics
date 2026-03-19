@@ -3,7 +3,6 @@ import {
   View, Text, ScrollView, RefreshControl, StyleSheet,
   TouchableOpacity, ActivityIndicator, Dimensions,
 } from 'react-native';
-import { LineChart } from 'react-native-gifted-charts';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 import { useMetricsStore } from '../store/metricsStore';
@@ -22,6 +21,29 @@ function generateChartData(oficialSell: number, blueSell: number, period: Period
     blue.push({ value: Math.round(blueSell * trend * (1 + 0.007 * Math.sin(i * 1.2 + 1.1))) });
   }
   return { oficial, blue };
+}
+
+function MiniBarChart({ oficial, blue }: { oficial: { value: number }[]; blue: { value: number }[] }) {
+  const allVals = [...oficial, ...blue].map(d => d.value);
+  const min = Math.min(...allVals);
+  const max = Math.max(...allVals);
+  const range = max - min || 1;
+  const H = 140;
+  return (
+    <View style={{ height: H, flexDirection: 'row', alignItems: 'flex-end', gap: 3, paddingHorizontal: 2 }}>
+      {oficial.map((o, i) => {
+        const b = blue[i];
+        const oH = Math.max(4, Math.round(((o.value - min) / range) * (H - 12)));
+        const bH = Math.max(4, Math.round(((b.value - min) / range) * (H - 12)));
+        return (
+          <View key={i} style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 1 }}>
+            <View style={{ flex: 1, height: oH, backgroundColor: 'rgba(161,161,170,0.45)', borderRadius: 2 }} />
+            <View style={{ flex: 1, height: bH, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 2 }} />
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 function SectionHeader({ label, color }: { label: string; color: string }) {
@@ -49,14 +71,14 @@ export default function ExchangeRatesScreen() {
 
   const chartData = useMemo(() => {
     if (!rates) return { oficial: [], blue: [] };
-    return generateChartData(rates.official.sell, rates.blue.sell, selectedPeriod);
+    return generateChartData(rates?.official?.sell ?? 1441, rates?.blue?.sell ?? 1425, selectedPeriod);
   }, [rates, selectedPeriod]);
 
   const RATE_CARDS = [
-    { title: 'Oficial', buy: rates?.official.buy ?? 0, sell: rates?.official.sell ?? 0, color: '#a1a1aa', change: '+0.5%', pos: true },
-    { title: 'Blue',    buy: rates?.blue.buy    ?? 0, sell: rates?.blue.sell    ?? 0, color: '#10b981', change: '+1.2%', pos: true },
-    { title: 'MEP',     buy: rates?.mep.buy     ?? 0, sell: rates?.mep.sell     ?? 0, color: '#818cf8', change: '+0.3%', pos: true },
-    { title: 'CCL',     buy: rates?.ccl.buy     ?? 0, sell: rates?.ccl.sell     ?? 0, color: '#f59e0b', change: '+0.8%', pos: true },
+    { title: 'Oficial', buy: rates?.official?.buy ?? 0, sell: rates?.official?.sell ?? 0, color: '#a1a1aa', change: '+0.5%', pos: true },
+    { title: 'Blue',    buy: rates?.blue?.buy    ?? 0, sell: rates?.blue?.sell    ?? 0, color: '#10b981', change: '+1.2%', pos: true },
+    { title: 'MEP',     buy: rates?.mep?.buy     ?? 0, sell: rates?.mep?.sell     ?? 0, color: '#818cf8', change: '+0.3%', pos: true },
+    { title: 'CCL',     buy: rates?.ccl?.buy     ?? 0, sell: rates?.ccl?.sell     ?? 0, color: '#f59e0b', change: '+0.8%', pos: true },
   ];
 
   return (
@@ -98,41 +120,15 @@ export default function ExchangeRatesScreen() {
             </View>
 
             {chartData.oficial.length > 0 && (
-              <LineChart
-                data={chartData.oficial}
-                data2={chartData.blue}
-                width={SCREEN_WIDTH - 60}
-                height={160}
-                thickness={2}
-                thickness2={2.5}
-                color="#a1a1aa"
-                color2="#10b981"
-                hideDataPoints
-                hideDataPoints2
-                areaChart
-                startFillColor="rgba(161,161,170,0.2)"
-                endFillColor="rgba(161,161,170,0)"
-                startFillColor2="rgba(16,185,129,0.25)"
-                endFillColor2="rgba(16,185,129,0)"
-                rulesColor="rgba(255,255,255,0.04)"
-                xAxisColor="rgba(255,255,255,0.08)"
-                yAxisColor="rgba(255,255,255,0)"
-                xAxisLabelTextStyle={{ color: '#52525b', fontSize: 9 }}
-                yAxisTextStyle={{ color: '#52525b', fontSize: 9 }}
-                yAxisTextNumberOfLines={1}
-                initialSpacing={4}
-                endSpacing={4}
-                curved
-                backgroundColor="transparent"
-              />
+              <MiniBarChart oficial={chartData.oficial} blue={chartData.blue} />
             )}
 
             {/* Current prices */}
             <View style={ex.priceSummary}>
               {[
-                { label: 'Oficial', value: rates?.official.sell ?? 0, color: '#a1a1aa' },
-                { label: 'Blue',    value: rates?.blue.sell    ?? 0, color: '#10b981' },
-                { label: 'MEP',     value: rates?.mep.sell     ?? 0, color: '#818cf8' },
+                { label: 'Oficial', value: rates?.official?.sell ?? 0, color: '#a1a1aa' },
+                { label: 'Blue',    value: rates?.blue?.sell    ?? 0, color: '#10b981' },
+                { label: 'MEP',     value: rates?.mep?.sell     ?? 0, color: '#818cf8' },
               ].map((item, i) => (
                 <View key={item.label} style={[ex.priceSummaryItem, i === 1 && { alignItems: 'center' }, i === 2 && { alignItems: 'flex-end' }]}>
                   <Text style={[ex.priceSummaryLabel, { color: item.color }]}>{item.label}</Text>
