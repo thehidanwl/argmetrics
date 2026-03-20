@@ -42,7 +42,8 @@ let prisma: any = null;
 if (hasDatabaseUrl) {
   try {
     const { PrismaClient } = require('@prisma/client');
-    prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+    // Let Prisma read POSTGRES_URL from env (matches schema definition)
+    prisma = new PrismaClient();
     console.log('✅ Prisma initialized');
   } catch (error) {
     console.warn('⚠️ Failed to initialize Prisma:', error);
