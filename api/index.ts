@@ -40,15 +40,18 @@ const hasDatabaseUrl = databaseUrl !== '';
 
 // Try to initialize Prisma only if a database URL exists
 let prisma: any = null;
+let prismaInitError: string | null = null;
 
 if (hasDatabaseUrl) {
   try {
     prisma = new PrismaClient();
     console.log('✅ Prisma initialized');
-  } catch (error) {
-    console.warn('⚠️ Failed to initialize Prisma:', error);
+  } catch (error: any) {
+    prismaInitError = String(error?.message ?? error);
+    console.warn('⚠️ Failed to initialize Prisma:', prismaInitError);
   }
 } else {
+  prismaInitError = 'No POSTGRES_URL / DATABASE_URL set';
   console.warn('⚠️ No database URL set (POSTGRES_URL / DATABASE_URL), using mock data');
 }
 
@@ -125,6 +128,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       database: {
         status: prisma ? 'connected' : 'disconnected',
         latencyMs: null,
+        error: prismaInitError,
+        hasUrl: hasDatabaseUrl,
       },
       ingestions: {
         lastSuccess: null,
