@@ -193,7 +193,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         upserted++;
       }
-      res.status(200).json({ success: true, upserted, timestamp: now.toISOString() });
+      // Clear LiveCache so USD rates are re-fetched with the new format (official, mep, ccl)
+      await tryDb(() => prisma.liveCache.deleteMany({}));
+      res.status(200).json({ success: true, upserted, cacheCleared: true, timestamp: now.toISOString() });
     } catch (error: any) {
       console.error('Seed error:', error);
       res.status(500).json({ error: { code: 'SEED_FAILED', message: String(error?.message ?? error) } });
