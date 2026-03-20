@@ -2,6 +2,11 @@
   "buildCommand": "npm install && npx prisma generate --schema=backend/prisma/schema.prisma && cd web && npm install && npm run build",
   "installCommand": "npm install",
   "outputDirectory": "web/out",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "node_modules/.prisma/client/**"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" }
   ],

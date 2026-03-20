@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-// Top-level import so Vercel's file tracer bundles the query engine binary
-import { PrismaClient } from '@prisma/client';
+// require at top level so Vercel's file tracer bundles the query engine binary
+const { PrismaClient } = require('@prisma/client');
 
 // Mock data for fallback when database is not available
 const mockMetrics = [
