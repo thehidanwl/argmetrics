@@ -33,21 +33,22 @@ const mockCountryRisk = {
 };
 
 // Check if DATABASE_URL is available
-const hasDatabaseUrl = typeof process.env.DATABASE_URL !== 'undefined' && process.env.DATABASE_URL !== '';
+const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
+const hasDatabaseUrl = databaseUrl !== '';
 
-// Try to initialize Prisma only if DATABASE_URL exists
+// Try to initialize Prisma only if a database URL exists
 let prisma: any = null;
 
 if (hasDatabaseUrl) {
   try {
     const { PrismaClient } = require('@prisma/client');
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     console.log('✅ Prisma initialized');
   } catch (error) {
     console.warn('⚠️ Failed to initialize Prisma:', error);
   }
 } else {
-  console.warn('⚠️ DATABASE_URL not set, using mock data');
+  console.warn('⚠️ No database URL set (POSTGRES_URL / DATABASE_URL), using mock data');
 }
 
 // In-memory cache for live data (simple approach for serverless)
