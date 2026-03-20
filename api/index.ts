@@ -35,7 +35,11 @@ const mockCountryRisk = {
 };
 
 // Check if DATABASE_URL is available
-const databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
+// Add pgbouncer=true for Supabase transaction-mode pooler compatibility
+let databaseUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
+if (databaseUrl && !databaseUrl.includes('pgbouncer=true')) {
+  databaseUrl += (databaseUrl.includes('?') ? '&' : '?') + 'pgbouncer=true';
+}
 const hasDatabaseUrl = databaseUrl !== '';
 
 // Try to initialize Prisma only if a database URL exists
@@ -44,7 +48,7 @@ let prismaInitError: string | null = null;
 
 if (hasDatabaseUrl) {
   try {
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
     console.log('✅ Prisma initialized');
   } catch (error: any) {
     prismaInitError = String(error?.message ?? error);
