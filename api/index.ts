@@ -257,8 +257,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
       });
     } catch (error) {
-      console.error('Error fetching metrics:', error);
-      res.status(500).json({ error: 'Failed to fetch metrics' });
+      console.error('Error fetching metrics, falling back to mock:', error);
+      // DB failed — return mock data as fallback
+      const limitNum = Math.min(parseInt(String(limit)), 10000);
+      const offsetNum = parseInt(String(offset));
+      let filtered = [...mockMetrics];
+      if (category) filtered = filtered.filter((m: any) => m.category === category);
+      if (name) filtered = filtered.filter((m: any) => m.name === name);
+      res.status(200).json({
+        data: filtered.slice(offsetNum, offsetNum + limitNum),
+        pagination: { total: filtered.length, limit: limitNum, offset: offsetNum, hasMore: offsetNum + limitNum < filtered.length },
+        mock: true,
+      });
     }
     return;
   }
