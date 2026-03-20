@@ -1,4 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+// Top-level import so Vercel's file tracer bundles the query engine binary
+import { PrismaClient } from '@prisma/client';
 
 // Mock data for fallback when database is not available
 const mockMetrics = [
@@ -41,8 +43,6 @@ let prisma: any = null;
 
 if (hasDatabaseUrl) {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    // Let Prisma read POSTGRES_URL from env (matches schema definition)
     prisma = new PrismaClient();
     console.log('✅ Prisma initialized');
   } catch (error) {
