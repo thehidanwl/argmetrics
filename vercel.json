@@ -1,6 +1,6 @@
 {
-  "buildCommand": "cd web && npm install && npm run build",
-  "installCommand": "cd web && npm install",
+  "buildCommand": "npm install && npx prisma generate && cd web && npm install && npm run build",
+  "installCommand": "npm install",
   "outputDirectory": "web/out",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" }
