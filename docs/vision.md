@@ -35,6 +35,15 @@ La información económica de Argentina está dispersa: INDEC, BCRA, MECON, Blue
 3. **Fase 3**: monetización Pro, alertas push, widgets.
 4. **Fase 4**: cobertura provincial, comparativas regionales, proyecciones.
 
+## Cómo llegan los datos
+
+ArgMetrics combina dos modalidades de ingesta:
+
+1. **Automática (APIs)**: datos en tiempo real o diarios que se actualizan solos — dólar (Bluelytics), tasas (BCRA API), reservas (BCRA API). Corren como cron jobs en Vercel.
+2. **Manual (archivos)**: datos que INDEC publica como Excel o PDF — inflación, PBI, pobreza, desempleo. Se cargan subiendo el archivo a un endpoint de ingesta que parsea, valida, y guarda en la DB.
+
+En ambos casos, **todo termina en la misma base de datos** (tabla `Metric` en Supabase). Los clientes (mobile y web) siempre consultan la DB, nunca las fuentes externas directamente.
+
 ## Principios de diseño del producto
 - Datos primero: cada número visible debe tener fuente y fecha explícitas
 - Velocidad: live data con cache agresivo, no esperar 3 segundos para ver el dólar
