@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Documentación del proyecto
+@docs/now.md
 @docs/vision.md
 @docs/architect.md
 @docs/backend-developer.md
