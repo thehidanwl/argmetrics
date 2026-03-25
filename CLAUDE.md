@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documentación del proyecto
 @docs/now.md
 @docs/vision.md
+
 @docs/architect.md
 @docs/backend-developer.md
 @docs/mobile-developer.md
@@ -15,6 +16,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @docs/product-manager.md
 @docs/qa-engineer.md
 @docs/tech-writer.md
+
+---
+
+## Regla de cierre de sesión
+
+**Al finalizar cada sesión donde se hizo trabajo real, Claude Code DEBE:**
+1. Actualizar `docs/now.md` con el estado actual del proyecto
+2. Reflejar qué se completó, qué quedó pendiente, y qué cambió
+3. Hacer commit y push de `docs/now.md` con mensaje `docs: update session state`
+
+Esto es obligatorio, no opcional. El objetivo es que la próxima sesión arranque con contexto real.
 
 ---
 
