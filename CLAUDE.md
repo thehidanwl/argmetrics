@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documentación del proyecto
 @docs/now.md
 @docs/ideas.md
+@docs/spec.md
 @docs/vision.md
 
 @docs/architect.md
