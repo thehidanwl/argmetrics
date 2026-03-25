@@ -1,10 +1,14 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 
 import AppNavigator from './src/navigation/TabNavigator';
+import CustomBottomBar from './src/navigation/CustomBottomBar';
+import { RootStackParamList } from './src/navigation/TabNavigator';
+
+export const navRef = createNavigationContainerRef<RootStackParamList>();
 
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -38,10 +42,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
-        <NavigationContainer>
-          <AppNavigator />
+        <View style={{ flex: 1, backgroundColor: '#0a0a0b' }}>
+          <NavigationContainer ref={navRef}>
+            <AppNavigator />
+          </NavigationContainer>
+          <CustomBottomBar navRef={navRef} />
           <StatusBar style="light" />
-        </NavigationContainer>
+        </View>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
