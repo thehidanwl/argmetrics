@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+build/
+*.jks
+*.keystore
+secrets/
+credentials.json
+*.p8
+*.p12
+*.mobileprovision

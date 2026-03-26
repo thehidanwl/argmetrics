@@ -8,8 +8,6 @@
 
 ## 💡 Ideas nuevas (sin priorizar)
 
-_(agregá ideas acá — cualquier cosa que se te ocurra, sin filtro)_
-
 ---
 
 ## 🎯 Priorizadas (listas para implementar)

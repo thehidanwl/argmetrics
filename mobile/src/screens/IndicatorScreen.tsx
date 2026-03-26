@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from '../components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMetricsStore } from '../store/metricsStore';
 import { useNavStore } from '../store/navStore';
@@ -78,10 +78,14 @@ interface ChartSeries {
 function ViewChart({
   series,
   height = 180,
+  type = 'bars',
 }: {
   series: ChartSeries[];
   height?: number;
+  type?: 'bars' | 'line';
 }) {
+  const [containerWidth, setContainerWidth] = useState(0);
+
   const allData = series.flatMap((s) => s.data);
   if (allData.length === 0) return null;
 
@@ -90,15 +94,13 @@ function ViewChart({
   const maxVal = Math.max(...allValues);
   const range = maxVal - minVal || 1;
 
-  // Usar la serie más larga como eje X
   const longest = series.reduce((a, b) => (a.data.length > b.data.length ? a : b));
-  const labels = longest.data.slice(-24); // max 24 puntos visibles
+  const labels = longest.data.slice(-24);
 
   // Mandate bands
   const mandateBands: { startIdx: number; endIdx: number; color: string }[] = [];
   let lastMandato: string | null = null;
   let bandStart = 0;
-
   labels.forEach((point, idx) => {
     const mandato = getMandatoForDate(point.date);
     const mandatoId = mandato?.id ?? 'none';
@@ -116,42 +118,135 @@ function ViewChart({
     }
   });
 
+  const MandateBands = () => (
+    <View style={StyleSheet.absoluteFill}>
+      {mandateBands.map((band, i) => {
+        const leftPct = band.startIdx / labels.length;
+        const widthPct = (band.endIdx - band.startIdx + 1) / labels.length;
+        return (
+          <View
+            key={i}
+            style={[StyleSheet.absoluteFill, {
+              left: `${leftPct * 100}%` as any,
+              width: `${widthPct * 100}%` as any,
+              backgroundColor: band.color,
+              opacity: 0.06,
+            }]}
+          />
+        );
+      })}
+    </View>
+  );
+
+  const GridLines = () => (
+    <>
+      {[0.25, 0.5, 0.75].map((pct) => (
+        <View key={pct} style={[styles.gridLine, { bottom: pct * height }]} />
+      ))}
+    </>
+  );
+
+  const XLabels = () => (
+    <View style={styles.xLabels}>
+      {[0, Math.floor(labels.length / 2), labels.length - 1].map((idx) => {
+        const point = labels[idx];
+        if (!point) return null;
+        const d = new Date(point.date);
+        return (
+          <Text key={idx} style={styles.xLabel}>
+            {`${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`}
+          </Text>
+        );
+      })}
+    </View>
+  );
+
+  if (type === 'line') {
+    const pLeft = 6, pRight = 6, pTop = 8, pBottom = 28;
+    const chartW = Math.max(containerWidth - pLeft - pRight, 1);
+    const chartH = height - pTop - pBottom;
+
+    const getPoint = (s: ChartSeries, idx: number) => {
+      const matchingPoint = s.data[s.data.length - labels.length + idx];
+      if (!matchingPoint) return null;
+      const x = pLeft + (chartW / Math.max(labels.length - 1, 1)) * idx;
+      const normH = Math.max(4, ((matchingPoint.value - minVal) / range) * (chartH - 4));
+      const y = pTop + (chartH - normH);
+      return { x, y };
+    };
+
+    return (
+      <View
+        style={[styles.chartWrap, { height }]}
+        onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+      >
+        <MandateBands />
+        <GridLines />
+
+        {containerWidth > 0 && series.map((s) => {
+          const points = labels.map((_, idx) => getPoint(s, idx));
+          return (
+            <React.Fragment key={s.label}>
+              {points.map((p, idx) => {
+                if (!p || idx === 0) return null;
+                const prev = points[idx - 1];
+                if (!prev) return null;
+                const dx = p.x - prev.x;
+                const dy = p.y - prev.y;
+                const length = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                return (
+                  <View
+                    key={`line-${idx}`}
+                    style={{
+                      position: 'absolute',
+                      width: length,
+                      height: 2,
+                      backgroundColor: s.color,
+                      opacity: 0.85,
+                      left: (prev.x + p.x) / 2 - length / 2,
+                      top: (prev.y + p.y) / 2 - 1,
+                      transform: [{ rotate: `${angle}deg` }],
+                      borderRadius: 1,
+                    }}
+                  />
+                );
+              })}
+              {points.map((p, idx) => p ? (
+                <View
+                  key={`dot-${idx}`}
+                  style={{
+                    position: 'absolute',
+                    width: 5,
+                    height: 5,
+                    borderRadius: 2.5,
+                    backgroundColor: s.color,
+                    left: p.x - 2.5,
+                    top: p.y - 2.5,
+                  }}
+                />
+              ) : null)}
+            </React.Fragment>
+          );
+        })}
+
+        <XLabels />
+      </View>
+    );
+  }
+
+  // Bars mode
   const barWidth = Math.max(2, Math.floor(300 / labels.length));
   const gap = Math.max(1, Math.floor(barWidth * 0.15));
 
   return (
-    <View style={[styles.chartWrap, { height }]}>
-      {/* Mandate bands como fondo */}
-      <View style={StyleSheet.absoluteFill}>
-        {mandateBands.map((band, i) => {
-          const leftPct = band.startIdx / labels.length;
-          const widthPct = (band.endIdx - band.startIdx + 1) / labels.length;
-          return (
-            <View
-              key={i}
-              style={[
-                StyleSheet.absoluteFill,
-                {
-                  left: `${leftPct * 100}%` as any,
-                  width: `${widthPct * 100}%` as any,
-                  backgroundColor: band.color,
-                  opacity: 0.06,
-                },
-              ]}
-            />
-          );
-        })}
-      </View>
+    <View
+      style={[styles.chartWrap, { height }]}
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
+      <MandateBands />
+      <GridLines />
 
-      {/* Líneas de referencia */}
-      {[0.25, 0.5, 0.75].map((pct) => (
-        <View
-          key={pct}
-          style={[styles.gridLine, { bottom: pct * height }]}
-        />
-      ))}
-
-      {/* Barras */}
       <View style={styles.barsContainer}>
         {labels.map((point, idx) => (
           <View key={idx} style={[styles.barGroup, { gap }]}>
@@ -179,20 +274,7 @@ function ViewChart({
         ))}
       </View>
 
-      {/* Etiquetas del eje X (solo primero, medio, último) */}
-      <View style={styles.xLabels}>
-        {[0, Math.floor(labels.length / 2), labels.length - 1].map((idx) => {
-          const point = labels[idx];
-          if (!point) return null;
-          const d = new Date(point.date);
-          const label = `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`;
-          return (
-            <Text key={idx} style={styles.xLabel}>
-              {label}
-            </Text>
-          );
-        })}
-      </View>
+      <XLabels />
     </View>
   );
 }
@@ -215,7 +297,7 @@ function DataTable({ series }: { series: ChartSeries[] }) {
         accessibilityLabel={open ? 'Ocultar tabla' : 'Ver tabla de datos'}
       >
         <Text style={styles.tableToggleText}>▼ Ver tabla de datos</Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color="#52525a" />
+        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={14} color="#52525a" />
       </TouchableOpacity>
 
       {open && (
@@ -272,6 +354,7 @@ export default function IndicatorScreen() {
     activeChipIds,
     activeTemporality,
     isRealEnabled,
+    chartType,
     toggleChip,
     setTemporality,
     toggleReal,
@@ -342,7 +425,7 @@ export default function IndicatorScreen() {
           accessibilityRole="button"
           accessibilityLabel="Volver"
         >
-          <Ionicons name="chevron-back" size={24} color="#f4f4f5" />
+          <Icon name="chevron-back" size={24} color="#f4f4f5" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{indicator.label}</Text>
         <TouchableOpacity
@@ -350,7 +433,7 @@ export default function IndicatorScreen() {
           accessibilityRole="button"
           accessibilityLabel="Opciones avanzadas"
         >
-          <Ionicons name="settings-outline" size={20} color="#8e8e93" />
+          <Icon name="settings-outline" size={20} color="#8e8e93" />
         </TouchableOpacity>
       </View>
 
@@ -443,7 +526,7 @@ export default function IndicatorScreen() {
           </View>
         ) : series.some((s) => s.data.length > 0) ? (
           <>
-            <ViewChart series={series} height={200} />
+            <ViewChart series={series} height={200} type={chartType} />
             <View style={styles.mandateLegend}>
               {MANDATOS.slice(-4).map((m) => (
                 <View key={m.id} style={styles.mandateLegendItem}>
@@ -457,7 +540,7 @@ export default function IndicatorScreen() {
           </>
         ) : (
           <View style={styles.emptyChart}>
-            <Ionicons name="bar-chart-outline" size={36} color="#3f3f46" />
+            <Icon name="bar-chart-outline" size={36} color="#3f3f46" />
             <Text style={styles.emptyText}>Sin datos disponibles</Text>
             <Text style={styles.emptySubtext}>
               Los datos se cargarán cuando se ejecute la ingesta

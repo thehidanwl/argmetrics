@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from '../components/Icon';
 import { useMetricsStore } from '../store/metricsStore';
 import { useNavStore } from '../store/navStore';
 import { RootStackParamList } from '../navigation/TabNavigator';
@@ -95,7 +95,7 @@ export default function HomeScreen() {
           accessibilityLabel="Ajustes"
           accessibilityRole="button"
         >
-          <Ionicons name="settings-outline" size={22} color="#71717a" />
+          <Icon name="settings-outline" size={22} color="#71717a" />
         </TouchableOpacity>
       </View>
 
@@ -159,9 +159,9 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Comparar gobiernos"
         >
-          <Ionicons name="git-compare" size={20} color="#818cf8" />
+          <Icon name="git-compare" size={20} color="#818cf8" />
           <Text style={styles.ctaText}>Comparar gobiernos</Text>
-          <Ionicons name="chevron-forward" size={16} color="#52525a" />
+          <Icon name="chevron-forward" size={16} color="#52525a" />
         </TouchableOpacity>
 
         {/* Categorías */}
@@ -175,10 +175,10 @@ export default function HomeScreen() {
             accessibilityLabel={cat.label}
           >
             <View style={[styles.categoryIcon, { backgroundColor: `${cat.color}20` }]}>
-              <Ionicons name={cat.icon as any} size={20} color={cat.color} />
+              <Icon name={cat.icon} size={20} color={cat.color} />
             </View>
             <Text style={styles.categoryLabel}>{cat.label}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#52525a" />
+            <Icon name="chevron-forward" size={16} color="#52525a" />
           </TouchableOpacity>
         ))}
 

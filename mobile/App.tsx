@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -39,14 +39,16 @@ const eb = StyleSheet.create({
 });
 
 export default function App() {
+  const [navReady, setNavReady] = useState(false);
+
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <View style={{ flex: 1, backgroundColor: '#0a0a0b' }}>
-          <NavigationContainer ref={navRef}>
+          <NavigationContainer ref={navRef} onReady={() => setNavReady(true)}>
             <AppNavigator />
           </NavigationContainer>
-          <CustomBottomBar navRef={navRef} />
+          {navReady && <CustomBottomBar navRef={navRef} />}
           <StatusBar style="light" />
         </View>
       </SafeAreaProvider>

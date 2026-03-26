@@ -38,8 +38,8 @@ interface MetricsState {
   fetchMetrics: (params?: Record<string, unknown>) => Promise<void>;
   fetchMetricByName: (name: string, params?: Record<string, unknown>) => Promise<void>;
   fetchCategories: () => Promise<void>;
-  fetchUSDRates: () => Promise<void>;
-  fetchCountryRisk: () => Promise<void>;
+  fetchUSDRates: (silent?: boolean) => Promise<void>;
+  fetchCountryRisk: (silent?: boolean) => Promise<void>;
   setDateRange: (from: string, to: string) => void;
   setSelectedPeriod: (period: string) => void;
   setSelectedCategory: (category: string | null) => void;
@@ -122,43 +122,50 @@ export const useMetricsStore = create<MetricsState>((set, get) => ({
     }
   },
 
-  fetchUSDRates: async () => {
-    set({ isLoadingLive: true, error: null });
+  fetchUSDRates: async (silent = false) => {
+    if (!silent) set({ isLoadingLive: true, error: null });
     try {
       const response = await liveApi.getUSDRates();
       set({ usdRates: response.data, isLoadingLive: false });
     } catch (error) {
-      // Provide fallback data on error
-      set({
-        usdRates: {
-          official: { buy: 820, sell: 860, updatedAt: new Date().toISOString() },
-          blue: { buy: 1000, sell: 1020, updatedAt: new Date().toISOString() },
-          mep: { buy: 980, sell: 995, updatedAt: new Date().toISOString() },
-          ccl: { buy: 1005, sell: 1020, updatedAt: new Date().toISOString() },
-          brecha: { value: 18.6, unit: 'percentage' },
-        },
-        isLoadingLive: false,
-      });
+      if (!get().usdRates) {
+        // Only set fallback if we have no data at all
+        set({
+          usdRates: {
+            official: { buy: 820, sell: 860, updatedAt: new Date().toISOString() },
+            blue: { buy: 1000, sell: 1020, updatedAt: new Date().toISOString() },
+            mep: { buy: 980, sell: 995, updatedAt: new Date().toISOString() },
+            ccl: { buy: 1005, sell: 1020, updatedAt: new Date().toISOString() },
+            brecha: { value: 18.6, unit: 'percentage' },
+          },
+          isLoadingLive: false,
+        });
+      } else {
+        set({ isLoadingLive: false });
+      }
     }
   },
 
-  fetchCountryRisk: async () => {
-    set({ isLoadingLive: true, error: null });
+  fetchCountryRisk: async (silent = false) => {
+    if (!silent) set({ isLoadingLive: true, error: null });
     try {
       const response = await liveApi.getCountryRisk();
       set({ countryRisk: response.data, isLoadingLive: false });
     } catch (error) {
-      // Provide fallback data
-      set({
-        countryRisk: {
-          value: 1850,
-          unit: 'basis_points',
-          variation: -15,
-          variationType: 'daily',
-          updatedAt: new Date().toISOString(),
-        },
-        isLoadingLive: false,
-      });
+      if (!get().countryRisk) {
+        set({
+          countryRisk: {
+            value: 1850,
+            unit: 'basis_points',
+            variation: -15,
+            variationType: 'daily',
+            updatedAt: new Date().toISOString(),
+          },
+          isLoadingLive: false,
+        });
+      } else {
+        set({ isLoadingLive: false });
+      }
     }
   },
 

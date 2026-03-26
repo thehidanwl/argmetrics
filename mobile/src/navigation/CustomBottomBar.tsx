@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from '../components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainerRef } from '@react-navigation/native';
 import { useNavStore } from '../store/navStore';
@@ -66,7 +66,7 @@ export default function CustomBottomBar({ navRef }: Props) {
             accessibilityRole="button"
             accessibilityLabel={cat.label}
           >
-            <Ionicons name={cat.icon as any} size={22} color="#52525a" />
+            <Icon name={cat.icon} size={22} color="#52525a" />
             <Text style={styles.tabLabel}>{cat.label}</Text>
           </TouchableOpacity>
         ))}
@@ -88,7 +88,7 @@ export default function CustomBottomBar({ navRef }: Props) {
         accessibilityRole="button"
         accessibilityLabel="Inicio"
       >
-        <Ionicons name="home" size={22} color="#818cf8" />
+        <Icon name="home" size={22} color="#818cf8" />
         <Text style={[styles.tabLabel, styles.tabLabelHome]}>Inicio</Text>
       </TouchableOpacity>
 
@@ -104,8 +104,8 @@ export default function CustomBottomBar({ navRef }: Props) {
             accessibilityLabel={ind.label}
           >
             {isActive && <View style={[styles.activeDot, { backgroundColor: ind.color }]} />}
-            <Ionicons
-              name={ind.icon as any}
+            <Icon
+              name={ind.icon}
               size={22}
               color={isActive ? ind.color : '#52525a'}
             />

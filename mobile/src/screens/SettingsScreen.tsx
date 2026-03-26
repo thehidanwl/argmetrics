@@ -3,12 +3,14 @@ import {
   View, Text, ScrollView, Switch, TouchableOpacity, StyleSheet, Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from '../components/Icon';
+import { useNavStore } from '../store/navStore';
 
 interface AlertItem { id: number; name: string; enabled: boolean; }
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
+  const { chartType, setChartType } = useNavStore();
   const [darkMode, setDarkMode]     = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [wifiOnly, setWifiOnly]     = useState(false);
@@ -22,9 +24,9 @@ export default function SettingsScreen() {
   const toggleAlert = (id: number) =>
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
 
-  const SectionHead = ({ icon, label }: { icon: keyof typeof Ionicons.glyphMap; label: string }) => (
+  const SectionHead = ({ icon, label }: { icon: string; label: string }) => (
     <View style={st.sectionHead}>
-      <Ionicons name={icon} size={13} color="#818cf8" />
+      <Icon name={icon} size={13} color="#818cf8" />
       <Text style={st.sectionHeadText}>{label}</Text>
     </View>
   );
@@ -56,7 +58,7 @@ export default function SettingsScreen() {
       ) : rightText ? (
         <Text style={st.rowRight}>{rightText}</Text>
       ) : (
-        <Ionicons name="chevron-forward" size={16} color="#71717a" />
+        <Icon name="chevron-forward" size={16} color="#71717a" />
       )}
     </TouchableOpacity>
   );
@@ -74,7 +76,7 @@ export default function SettingsScreen() {
           <View key={alert.id}>
             <View style={st.row}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                <Ionicons name="warning-outline" size={14} color="#f59e0b" />
+                <Icon name="warning-outline" size={14} color="#f59e0b" />
                 <Text style={[st.rowLabel, { flex: 1 }]}>{alert.name}</Text>
               </View>
               <Switch
@@ -88,6 +90,44 @@ export default function SettingsScreen() {
             {idx < alerts.length - 1 && <RowDivider />}
           </View>
         ))}
+      </View>
+
+      {/* Visualización */}
+      <SectionHead icon="bar-chart-outline" label="Visualización" />
+      <View style={st.card}>
+        <View style={st.row}>
+          <Text style={st.rowLabel}>Tipo de gráfico</Text>
+          <View style={st.segmentedControl}>
+            <TouchableOpacity
+              style={[st.segment, chartType === 'bars' && st.segmentActive]}
+              onPress={() => setChartType('bars')}
+              accessibilityRole="button"
+            >
+              <Icon
+                name="bar-chart"
+                size={14}
+                color={chartType === 'bars' ? '#e0e7ff' : '#71717a'}
+              />
+              <Text style={[st.segmentText, chartType === 'bars' && st.segmentTextActive]}>
+                Barras
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[st.segment, chartType === 'line' && st.segmentActive]}
+              onPress={() => setChartType('line')}
+              accessibilityRole="button"
+            >
+              <Icon
+                name="trending-up"
+                size={14}
+                color={chartType === 'line' ? '#e0e7ff' : '#71717a'}
+              />
+              <Text style={[st.segmentText, chartType === 'line' && st.segmentTextActive]}>
+                Línea
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       {/* Appearance */}
@@ -138,4 +178,22 @@ const st = StyleSheet.create({
   divider:  { height: 1, backgroundColor: 'rgba(255,255,255,0.06)', marginHorizontal: 16 },
   footer:   { alignItems: 'center', paddingTop: 8 },
   footerText: { fontSize: 11, color: '#52525b', marginBottom: 3 },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: '#1c1c26',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  segment: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  segmentActive: { backgroundColor: '#3730a3' },
+  segmentText: { fontSize: 12, fontWeight: '600', color: '#71717a' },
+  segmentTextActive: { color: '#e0e7ff' },
 });

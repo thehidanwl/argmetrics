@@ -9,6 +9,8 @@ interface NavState {
   activeTemporality: TemporalityMode;
   isRealEnabled: boolean;
 
+  chartType: 'bars' | 'line';
+
   setNavLevel: (level: 0 | 1 | 2) => void;
   setActiveCategory: (categoryId: AppCategory | null) => void;
   setActiveIndicator: (indicatorId: string | null) => void;
@@ -16,6 +18,7 @@ interface NavState {
   toggleChip: (chipId: string) => void;
   setTemporality: (mode: TemporalityMode) => void;
   toggleReal: () => void;
+  setChartType: (type: 'bars' | 'line') => void;
   navigateToCategory: (categoryId: AppCategory) => void;
   navigateToIndicator: (indicatorId: string, categoryId: AppCategory) => void;
   navigateHome: () => void;
@@ -28,6 +31,7 @@ export const useNavStore = create<NavState>((set, get) => ({
   activeChipIds: [],
   activeTemporality: 'monthly',
   isRealEnabled: false,
+  chartType: 'bars',
 
   setNavLevel: (level) => set({ navLevel: level }),
   setActiveCategory: (categoryId) => set({ activeCategoryId: categoryId }),
@@ -47,6 +51,7 @@ export const useNavStore = create<NavState>((set, get) => ({
 
   setTemporality: (mode) => set({ activeTemporality: mode }),
   toggleReal: () => set((s) => ({ isRealEnabled: !s.isRealEnabled })),
+  setChartType: (type) => set({ chartType: type }),
 
   navigateToCategory: (categoryId) => {
     set({

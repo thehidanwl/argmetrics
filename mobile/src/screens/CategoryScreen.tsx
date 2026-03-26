@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from '../components/Icon';
 import { useMetricsStore } from '../store/metricsStore';
 import { useNavStore } from '../store/navStore';
 import { INDICATORS_BY_CATEGORY } from '../data/indicators';
@@ -71,7 +71,7 @@ function IndicatorCard({ indicator, onPress }: { indicator: IndicatorDef; onPres
     >
       <View style={styles.cardLeft}>
         <View style={[styles.iconWrap, { backgroundColor: `${indicator.color}18` }]}>
-          <Ionicons name={indicator.icon as any} size={20} color={indicator.color} />
+          <Icon name={indicator.icon} size={20} color={indicator.color} />
         </View>
         <View style={styles.cardInfo}>
           <Text style={styles.cardTitle}>{indicator.label}</Text>
@@ -91,7 +91,7 @@ function IndicatorCard({ indicator, onPress }: { indicator: IndicatorDef; onPres
         ) : (
           <Text style={styles.cardValueEmpty}>—</Text>
         )}
-        <Ionicons name="chevron-forward" size={14} color="#52525a" />
+        <Icon name="chevron-forward" size={14} color="#52525a" />
       </View>
     </TouchableOpacity>
   );
@@ -125,7 +125,7 @@ export default function CategoryScreen() {
           accessibilityRole="button"
           accessibilityLabel="Volver"
         >
-          <Ionicons name="chevron-back" size={24} color="#f4f4f5" />
+          <Icon name="chevron-back" size={24} color="#f4f4f5" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{CATEGORY_LABELS[categoryId]}</Text>
         <View style={{ width: 40 }} />
