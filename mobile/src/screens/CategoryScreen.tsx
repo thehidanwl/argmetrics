@@ -14,6 +14,8 @@ import { useNavStore } from '../store/navStore';
 import { INDICATORS_BY_CATEGORY } from '../data/indicators';
 import { RootStackParamList } from '../navigation/TabNavigator';
 import { AppCategory, IndicatorDef } from '../types';
+import Sparkline from '../components/Sparkline';
+import { generateSparkline } from '../utils/calculations';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Category'>;
 type Route = RouteProp<RootStackParamList, 'Category'>;
@@ -25,36 +27,10 @@ const CATEGORY_LABELS: Record<AppCategory, string> = {
   fiscales: 'Fiscales',
 };
 
-function genSparkline(base: number, points = 8): number[] {
-  const data: number[] = [base];
-  for (let i = 1; i < points; i++) {
-    const delta = (Math.random() - 0.48) * Math.max(base, 1) * 0.05;
-    data.push(Math.max(0, data[i - 1] + delta));
-  }
-  return data;
-}
-
 function MiniSparkline({ color }: { color: string }) {
-  const data = genSparkline(50 + Math.random() * 50);
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', width: 56, height: 24, gap: 2 }}>
-      {data.map((v, i) => (
-        <View
-          key={i}
-          style={{
-            flex: 1,
-            height: Math.max(2, Math.round(((v - min) / range) * 20) + 2),
-            backgroundColor: color,
-            opacity: 0.35 + 0.65 * (i / (data.length - 1)),
-            borderRadius: 1,
-          }}
-        />
-      ))}
-    </View>
-  );
+  // Placeholder con datos aleatorios hasta que haya datos reales disponibles
+  const data = generateSparkline(50 + Math.random() * 50, 8, 0.05);
+  return <Sparkline data={data} color={color} width={56} height={24} />;
 }
 
 function IndicatorCard({ indicator, onPress }: { indicator: IndicatorDef; onPress: () => void }) {

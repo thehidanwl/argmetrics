@@ -17,6 +17,8 @@ import { getIndicator } from '../data/indicators';
 import { getMandatoForDate, MANDATOS } from '../data/mandatos';
 import { RootStackParamList } from '../navigation/TabNavigator';
 import { DataPoint, TemporalityMode } from '../types';
+import { calcInteranual, calcAcumulado } from '../utils/calculations';
+import { formatDateShort, formatDateLong, formatVariation } from '../utils/format';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Indicator'>;
 type Route = RouteProp<RootStackParamList, 'Indicator'>;
@@ -28,44 +30,6 @@ const TEMPORALITY_LABELS: Record<TemporalityMode, string> = {
   mandato: 'Mandato',
 };
 
-// ─── Cálculos de series derivadas ────────────────────────────────────────────
-
-function calcInteranual(data: DataPoint[]): DataPoint[] {
-  return data
-    .map((point, idx) => {
-      const sameMonthLastYear = data.find((p) => {
-        const d1 = new Date(p.date);
-        const d2 = new Date(point.date);
-        return (
-          d1.getMonth() === d2.getMonth() &&
-          d1.getFullYear() === d2.getFullYear() - 1
-        );
-      });
-      if (!sameMonthLastYear) return null;
-      const variation =
-        ((point.value - sameMonthLastYear.value) / Math.abs(sameMonthLastYear.value)) * 100;
-      return { date: point.date, value: parseFloat(variation.toFixed(2)) };
-    })
-    .filter(Boolean) as DataPoint[];
-}
-
-function calcAcumulado(data: DataPoint[]): DataPoint[] {
-  if (data.length === 0) return [];
-  const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
-  const firstYear = new Date(sorted[0].date).getFullYear();
-  let acum = 1;
-  let lastYear = firstYear;
-
-  return sorted.map((point) => {
-    const year = new Date(point.date).getFullYear();
-    if (year !== lastYear) {
-      acum = 1;
-      lastYear = year;
-    }
-    acum *= 1 + point.value / 100;
-    return { date: point.date, value: parseFloat(((acum - 1) * 100).toFixed(2)) };
-  });
-}
 
 // ─── Componente ViewChart (sin SVG) ──────────────────────────────────────────
 
@@ -151,10 +115,9 @@ function ViewChart({
       {[0, Math.floor(labels.length / 2), labels.length - 1].map((idx) => {
         const point = labels[idx];
         if (!point) return null;
-        const d = new Date(point.date);
         return (
           <Text key={idx} style={styles.xLabel}>
-            {`${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`}
+            {formatDateShort(point.date)}
           </Text>
         );
       })}
@@ -310,25 +273,23 @@ function DataTable({ series }: { series: ChartSeries[] }) {
           </View>
           {rows.map((row, i) => {
             const prev = rows[i + 1];
-            const variation =
-              prev && prev.value !== 0
-                ? (((row.value - prev.value) / Math.abs(prev.value)) * 100).toFixed(1)
-                : '—';
-            const d = new Date(row.date);
-            const label = `${d.getMonth() + 1}/${d.getFullYear()}`;
+            const variationNum = prev && prev.value !== 0
+              ? ((row.value - prev.value) / Math.abs(prev.value)) * 100
+              : null;
+            const variation = formatVariation(variationNum);
             return (
               <View key={i} style={[styles.tableRow, i % 2 === 0 && styles.tableRowAlt]}>
-                <Text style={styles.tableCell}>{label}</Text>
+                <Text style={styles.tableCell}>{formatDateLong(row.date)}</Text>
                 <Text style={[styles.tableCell, { color: '#f4f4f5' }]}>
                   {row.value.toFixed(2)}
                 </Text>
                 <Text
                   style={[
                     styles.tableCell,
-                    { color: parseFloat(variation) > 0 ? '#ef4444' : '#10b981' },
+                    { color: variationNum != null && variationNum > 0 ? '#ef4444' : '#10b981' },
                   ]}
                 >
-                  {variation !== '—' ? `${parseFloat(variation) > 0 ? '+' : ''}${variation}%` : '—'}
+                  {variation}
                 </Text>
                 <Text style={styles.tableCell}>{row.source ?? main.label}</Text>
               </View>
@@ -348,7 +309,7 @@ export default function IndicatorScreen() {
   const insets = useSafeAreaInsets();
   const { indicatorId, categoryId } = route.params;
 
-  const indicator = getIndicator(indicatorId);
+  const indicator = useMemo(() => getIndicator(indicatorId), [indicatorId]);
   const { metrics, isLoadingMetrics, fetchMetrics } = useMetricsStore();
   const {
     activeChipIds,
@@ -383,10 +344,10 @@ export default function IndicatorScreen() {
         const chip = indicator.chips.find((c) => c.id === chipId);
         if (!chip) return null;
 
-        const raw = metrics
-          ?.filter((m) => m.name === chip.metricName)
+        const raw = (metrics ?? [])
+          .filter((m) => m.name === chip.metricName)
           .map((m) => ({ date: m.date, value: m.value, source: m.source }))
-          .sort((a, b) => a.date.localeCompare(b.date)) ?? [];
+          .sort((a, b) => a.date.localeCompare(b.date));
 
         let data: DataPoint[] = raw;
 

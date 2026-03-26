@@ -15,6 +15,8 @@ import { useMetricsStore } from '../store/metricsStore';
 import { useNavStore } from '../store/navStore';
 import { RootStackParamList } from '../navigation/TabNavigator';
 import { AppCategory } from '../types';
+import Sparkline from '../components/Sparkline';
+import { generateSparkline } from '../utils/calculations';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -25,36 +27,6 @@ const CATEGORIES: { id: AppCategory; label: string; icon: string; color: string 
   { id: 'fiscales', label: 'Fiscales', icon: 'library', color: '#67e8f9' },
 ];
 
-function genSparkline(base: number, points = 8): number[] {
-  const data: number[] = [base];
-  for (let i = 1; i < points; i++) {
-    const delta = (Math.random() - 0.48) * base * 0.04;
-    data.push(Math.max(0, data[i - 1] + delta));
-  }
-  return data;
-}
-
-function MiniSparkline({ data, color }: { data: number[]; color: string }) {
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', width: 50, height: 22, gap: 2 }}>
-      {data.map((v, i) => (
-        <View
-          key={i}
-          style={{
-            flex: 1,
-            height: Math.max(2, Math.round(((v - min) / range) * 18) + 2),
-            backgroundColor: color,
-            opacity: 0.4 + 0.6 * (i / (data.length - 1)),
-            borderRadius: 1,
-          }}
-        />
-      ))}
-    </View>
-  );
-}
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -113,7 +85,7 @@ export default function HomeScreen() {
             <Text style={styles.kpiValue}>
               ${blueRate?.sell?.toLocaleString('es-AR') ?? '—'}
             </Text>
-            <MiniSparkline data={genSparkline(blueRate?.sell ?? 1200)} color="#10b981" />
+            <Sparkline data={generateSparkline(blueRate?.sell ?? 1200)} color="#10b981" width={50} height={22} />
             <Text style={styles.kpiSub}>venta • Bluelytics</Text>
           </View>
 
@@ -123,7 +95,7 @@ export default function HomeScreen() {
             <Text style={styles.kpiValue}>
               {inflation?.value != null ? `${inflation.value.toFixed(1)}%` : '—'}
             </Text>
-            <MiniSparkline data={genSparkline(inflation?.value ?? 4)} color="#ef4444" />
+            <Sparkline data={generateSparkline(inflation?.value ?? 4)} color="#ef4444" width={50} height={22} />
             <Text style={styles.kpiSub}>mensual • INDEC</Text>
           </View>
         </View>
@@ -135,7 +107,7 @@ export default function HomeScreen() {
             <Text style={styles.kpiValue}>
               {risk?.value != null ? `${risk.value.toLocaleString('es-AR')} pts` : '—'}
             </Text>
-            <MiniSparkline data={genSparkline(risk?.value ?? 800)} color="#f59e0b" />
+            <Sparkline data={generateSparkline(risk?.value ?? 800)} color="#f59e0b" width={50} height={22} />
             <Text style={styles.kpiSub}>EMBI+ • JPMorgan</Text>
           </View>
 
@@ -145,9 +117,11 @@ export default function HomeScreen() {
             <Text style={styles.kpiValue}>
               ${(usdRates?.oficial ?? usdRates?.official)?.sell?.toLocaleString('es-AR') ?? '—'}
             </Text>
-            <MiniSparkline
-              data={genSparkline((usdRates?.oficial ?? usdRates?.official)?.sell ?? 1000)}
+            <Sparkline
+              data={generateSparkline((usdRates?.oficial ?? usdRates?.official)?.sell ?? 1000)}
               color="#94a3b8"
+              width={50}
+              height={22}
             />
             <Text style={styles.kpiSub}>venta • BCRA</Text>
           </View>
