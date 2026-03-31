@@ -59,11 +59,13 @@ async function main() {
     process.exit(1);
   }
 
-  const urlConPooler = databaseUrl.includes('pgbouncer=true')
-    ? databaseUrl
-    : databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'pgbouncer=true';
+  // Para conexión directa (puerto 5432) no se necesita pgbouncer=true
+  // Solo agregarlo si es el pooler de Supabase (puerto 6543)
+  const finalUrl = databaseUrl.includes(':6543') && !databaseUrl.includes('pgbouncer=true')
+    ? databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
+    : databaseUrl;
 
-  const prisma = new PrismaClient({ datasources: { db: { url: urlConPooler } } });
+  const prisma = new PrismaClient({ datasources: { db: { url: finalUrl } } });
 
   try {
     await prisma.$connect();
