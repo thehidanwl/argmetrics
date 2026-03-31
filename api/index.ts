@@ -97,6 +97,30 @@ function calculateBrecha(official: number, blue: number): number {
   return ((blue - official) / official) * 100;
 }
 
+async function fetchDolarApiRates(): Promise<{
+  mep: { buy: number; sell: number };
+  ccl: { buy: number; sell: number };
+  mayorista: { buy: number; sell: number };
+} | null> {
+  try {
+    const [mepRes, cclRes, mayoristaRes] = await Promise.all([
+      fetch('https://dolarapi.com/v1/dolares/bolsa', { headers: { 'Accept': 'application/json' } }),
+      fetch('https://dolarapi.com/v1/dolares/contadoconliqui', { headers: { 'Accept': 'application/json' } }),
+      fetch('https://dolarapi.com/v1/dolares/mayorista', { headers: { 'Accept': 'application/json' } }),
+    ]);
+    if (!mepRes.ok || !cclRes.ok || !mayoristaRes.ok) return null;
+    const [mep, ccl, mayorista] = await Promise.all([mepRes.json(), cclRes.json(), mayoristaRes.json()]);
+    return {
+      mep: { buy: mep.compra, sell: mep.venta },
+      ccl: { buy: ccl.compra, sell: ccl.venta },
+      mayorista: { buy: mayorista.compra, sell: mayorista.venta },
+    };
+  } catch (error) {
+    console.error('Error fetching DolarApi:', error);
+    return null;
+  }
+}
+
 // Helper: try a DB operation, return null on failure
 async function tryDb<T>(fn: () => Promise<T>): Promise<T | null> {
   try {
@@ -212,19 +236,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const today = now.toISOString().split('T')[0];
     try {
-      const bluelyticsData = await fetchBluelyticsRates();
-      if (!bluelyticsData) {
-        res.status(502).json({ error: { code: 'API_FAILED', message: 'Could not fetch Bluelytics data' } });
+      const [bluelyticsData, dolarApiData] = await Promise.all([
+        fetchBluelyticsRates(),
+        fetchDolarApiRates(),
+      ]);
+
+      if (!bluelyticsData && !dolarApiData) {
+        res.status(502).json({ error: { code: 'API_FAILED', message: 'Could not fetch data from any source' } });
         return;
+      }
+
+      const rates: Array<{ name: string; value: number; source: string }> = [];
+
+      if (bluelyticsData) {
+        rates.push(
+          { name: 'usd_oficial', value: bluelyticsData.oficial.sell, source: 'Bluelytics' },
+          { name: 'usd_blue', value: bluelyticsData.blue.sell, source: 'Bluelytics' },
+        );
+      }
+      if (dolarApiData) {
+        rates.push(
+          { name: 'usd_mep', value: dolarApiData.mep.sell, source: 'DolarApi' },
+          { name: 'usd_ccl', value: dolarApiData.ccl.sell, source: 'DolarApi' },
+          { name: 'usd_mayorista', value: dolarApiData.mayorista.sell, source: 'DolarApi' },
+        );
       }
 
       const records: Array<{ id: string; name: string; value: number }> = [];
       const upserts: Promise<unknown>[] = [];
-
-      const rates: Array<{ name: string; value: number }> = [
-        { name: 'usd_oficial', value: bluelyticsData.oficial.sell },
-        { name: 'usd_blue', value: bluelyticsData.blue.sell },
-      ];
 
       for (const r of rates) {
         const id = `${r.name}-${today}`;
@@ -232,7 +271,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           prisma.metric.upsert({
             where: { id },
             update: { value: r.value, updatedAt: now },
-            create: { id, name: r.name, category: 'economy', value: r.value, date: now, periodType: 'daily', source: 'Bluelytics' },
+            create: { id, name: r.name, category: 'economy', value: r.value, date: now, periodType: 'daily', source: r.source, createdAt: now, updatedAt: now },
           })
         );
         records.push({ id, name: r.name, value: r.value });
@@ -431,23 +470,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Fetch fresh data from Bluelytics
-    const bluelyticsData = await fetchBluelyticsRates();
+    // Fetch fresh data in parallel from Bluelytics (oficial+blue) and DolarApi (mep+ccl+mayorista)
+    const [bluelyticsData, dolarApiData] = await Promise.all([
+      fetchBluelyticsRates(),
+      fetchDolarApiRates(),
+    ]);
     let usdData;
 
     if (bluelyticsData) {
       const updatedAt = bluelyticsData.last_update;
-      // Estimate MEP/CCL from oficial/blue spread (MEP ~98% of blue, CCL ~99% of blue)
-      const mepBuy = Math.round(bluelyticsData.blue.buy * 0.98);
-      const mepSell = Math.round(bluelyticsData.blue.sell * 0.98);
-      const cclBuy = Math.round(bluelyticsData.blue.buy * 0.99);
-      const cclSell = Math.round(bluelyticsData.blue.sell * 0.99);
+      // Use real MEP/CCL from DolarApi if available, otherwise estimate from blue
+      const mep = dolarApiData?.mep ?? {
+        buy: Math.round(bluelyticsData.blue.buy * 0.98),
+        sell: Math.round(bluelyticsData.blue.sell * 0.98),
+      };
+      const ccl = dolarApiData?.ccl ?? {
+        buy: Math.round(bluelyticsData.blue.buy * 0.99),
+        sell: Math.round(bluelyticsData.blue.sell * 0.99),
+      };
+      const mayorista = dolarApiData?.mayorista ?? {
+        buy: bluelyticsData.oficial.buy,
+        sell: bluelyticsData.oficial.sell,
+      };
       usdData = {
         oficial: { buy: bluelyticsData.oficial.buy, sell: bluelyticsData.oficial.sell, updatedAt },
         official: { buy: bluelyticsData.oficial.buy, sell: bluelyticsData.oficial.sell, updatedAt },
         blue: { buy: bluelyticsData.blue.buy, sell: bluelyticsData.blue.sell, updatedAt },
-        mep: { buy: mepBuy, sell: mepSell, updatedAt },
-        ccl: { buy: cclBuy, sell: cclSell, updatedAt },
+        mep: { buy: mep.buy, sell: mep.sell, updatedAt, real: !!dolarApiData },
+        ccl: { buy: ccl.buy, sell: ccl.sell, updatedAt, real: !!dolarApiData },
+        mayorista: { buy: mayorista.buy, sell: mayorista.sell, updatedAt },
         oficial_euro: { buy: bluelyticsData.oficial_euro.buy, sell: bluelyticsData.oficial_euro.sell, updatedAt },
         blue_euro: { buy: bluelyticsData.blue_euro.buy, sell: bluelyticsData.blue_euro.sell, updatedAt },
         brecha: { value: calculateBrecha(bluelyticsData.oficial.sell, bluelyticsData.blue.sell).toFixed(2), unit: 'percentage' },
